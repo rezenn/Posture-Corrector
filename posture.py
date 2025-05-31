@@ -112,7 +112,7 @@ while cap.isOpened():
                     if os.path.exists(sound_file):
                         playsound(sound_file)
                     last_alert_time = current_time
-            else:
+            else:q
                 status = "Good Posture"
                 color = (0, 255, 0)
 
