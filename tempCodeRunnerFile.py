@@ -26,7 +26,7 @@ def speak(text):
         text) or tts_engine.runAndWait(), daemon=True).start()
 
 
-# MediaPipe Pose Setup
+# === MediaPipe Pose Setup ===
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 pose = mp_pose.Pose(static_image_mode=False,
@@ -97,17 +97,17 @@ class PostureApp:
             mid_hip = ((l_hip[0] + r_hip[0]) // 2, (l_hip[1] + r_hip[1]) // 2)
             mid_ear = ((l_ear[0] + r_ear[0]) // 2, (l_ear[1] + r_ear[1]) // 2)
 
-            # Angle Calculations
+            # === Angle Calculations ===
             shoulder_angle = calculate_angle(l_sh, r_sh, (r_sh[0], 0))
             neck_angle = calculate_angle(l_ear, l_sh, (l_sh[0], 0))
             spine_angle = calculate_angle(mid_ear, mid_sh, mid_hip)
 
-            # Symmetry (left vs right ear–shoulder–hip)
+            # === Symmetry (left vs right ear–shoulder–hip) ===
             left_spine = calculate_angle(l_ear, l_sh, l_hip)
             right_spine = calculate_angle(r_ear, r_sh, r_hip)
             symmetry_diff = abs(left_spine - right_spine)
 
-            # Posture Classification
+            # === Posture Classification ===
             if model_loaded:
                 label = clf.predict(
                     [[shoulder_angle, neck_angle, spine_angle, symmetry_diff]])[0]
@@ -115,8 +115,8 @@ class PostureApp:
             else:
                 # Rule-based logic
                 if (
-                    shoulder_angle < 85 or
-                    neck_angle < 25 or
+                    shoulder_angle < 90 or
+                    neck_angle < 30 or
                     spine_angle < 140 or
                     symmetry_diff > 15
                 ):
@@ -131,7 +131,7 @@ class PostureApp:
             mp_drawing.draw_landmarks(
                 frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-        # Display Info
+        # === Display Info ===
         self.status_var.set(posture_status)
         self.angle_var.set(
             f"{shoulder_angle:.1f}, {neck_angle:.1f}, {spine_angle:.1f}, Δ={symmetry_diff:.1f}")
@@ -152,7 +152,7 @@ class PostureApp:
         self.root.destroy()
 
 
-# Start Application
+# === Start Application ===
 if __name__ == "__main__":
     root = tk.Tk()
     app = PostureApp(root)
