@@ -10,15 +10,6 @@
 
 Run the following in the terminal to install libraries
 
-pip install opencv-python
+pip install opencv-python mediapipe numpy pyttsx3 pillow scikit-learn
 
-pip install mediapipe
-
-pip install numpy
-
-pip install playsound
-
-or 
-
-pip install opencv-python mediapipe numpy playsound (install all libraries at once)
 
