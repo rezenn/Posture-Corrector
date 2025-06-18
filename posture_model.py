@@ -48,7 +48,6 @@ while cap.isOpened():
 
 cap.release()
 
-# Save to CSV
 with open("posture_data.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["shoulder_angle", "neck_angle", "label"])
