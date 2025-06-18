@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 import joblib
 from gtts import gTTS
 import os
-from playsound import playsound
+import pygame
 
 # Load AI model
 model_loaded = False
@@ -29,20 +29,36 @@ mp_drawing = mp.solutions.drawing_utils
 pose = mp_pose.Pose(static_image_mode=False,
                     min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
+# Nepali TTS using gTTS and pygame
+
+
+def speak_np(text):
+    def play_nepali():
+        try:
+            tts = gTTS(text=text, lang='ne')
+            filename = "nep_speech.mp3"
+            tts.save(filename)
+
+            pygame.mixer.init()
+            pygame.mixer.music.load(filename)
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                time.sleep(0.1)
+            pygame.mixer.music.unload()
+            os.remove(filename)
+        except Exception as e:
+            print("Nepali TTS error:", e)
+
+    threading.Thread(target=play_nepali, daemon=True).start()
+
+# English TTS using pyttsx3
+
 
 def speak_en(text):
     threading.Thread(target=lambda: tts_engine.say(
         text) or tts_engine.runAndWait(), daemon=True).start()
 
-
-def speak_np(text):
-    def play_nepali():
-        tts = gTTS(text=text, lang='ne')
-        filename = "nep_speech.mp3"
-        tts.save(filename)
-        playsound(filename)
-        os.remove(filename)
-    threading.Thread(target=play_nepali, daemon=True).start()
+# Angle calculator
 
 
 def calculate_angle(a, b, c):
@@ -62,21 +78,16 @@ class PostureApp:
         self.root.geometry("900x720")
         self.root.configure(bg="#f0f2f5")
 
-        # Language toggle
         self.language = tk.StringVar(value="English")
-
-        # Time tracking for posture
         self.bad_posture_start = None
-        self.alert_cooldown = 5
+        self.alert_cooldown = 1
         self.last_alert_time = 0
 
-        # Fonts
         TITLE_FONT = ("Segoe UI", 22, "bold")
         LABEL_FONT = ("Segoe UI", 12)
         STATUS_FONT = ("Segoe UI", 16, "bold")
         ANGLE_FONT = ("Consolas", 11)
 
-        # UI elements
         tk.Label(root, text="Posture Monitoring System", font=TITLE_FONT,
                  bg="#f0f2f5", fg="#2c3e50").pack(pady=(15, 10))
 
@@ -95,15 +106,15 @@ class PostureApp:
 
         ttk.Label(status_frame, text="Posture Status:", font=LABEL_FONT).grid(
             row=0, column=0, sticky="w", padx=(0, 5))
-        self.status_label = ttk.Label(
-            status_frame, textvariable=self.status_var, font=STATUS_FONT, foreground="blue")
+        self.status_label = ttk.Label(status_frame, textvariable=self.status_var,
+                                      font=STATUS_FONT, foreground="blue")
         self.status_label.grid(row=0, column=1, sticky="w")
 
         ttk.Label(status_frame, text="Angles (Shoulder, Neck, Spine, Symmetry) + Distance:",
                   font=LABEL_FONT).grid(row=1, column=0, columnspan=2, sticky="w", pady=(10, 2))
-        ttk.Label(status_frame, textvariable=self.angle_var,
-                  font=ANGLE_FONT, background="#ffffff", foreground="#333333", relief="groove", padding=4
-                  ).grid(row=2, column=0, columnspan=2, sticky="we", pady=5)
+        ttk.Label(status_frame, textvariable=self.angle_var, font=ANGLE_FONT,
+                  background="#ffffff", foreground="#333333", relief="groove", padding=4).grid(
+            row=2, column=0, columnspan=2, sticky="we", pady=5)
 
         video_frame = ttk.LabelFrame(root, text="Live Camera Feed", padding=10)
         video_frame.pack(padx=10, pady=20)
@@ -142,8 +153,8 @@ class PostureApp:
             lms = results.pose_landmarks.landmark
             frame_h, frame_w = frame.shape[:2]
 
-            def get_point(landmark):
-                return (int(lms[landmark].x * frame_w), int(lms[landmark].y * frame_h))
+            def get_point(lm): return (
+                int(lms[lm].x * frame_w), int(lms[lm].y * frame_h))
 
             l_sh = get_point(mp_pose.PoseLandmark.LEFT_SHOULDER)
             r_sh = get_point(mp_pose.PoseLandmark.RIGHT_SHOULDER)
@@ -158,7 +169,6 @@ class PostureApp:
             mid_hip = ((l_hip[0] + r_hip[0]) // 2, (l_hip[1] + r_hip[1]) // 2)
             mid_ear = ((l_ear[0] + r_ear[0]) // 2, (l_ear[1] + r_ear[1]) // 2)
 
-            # Angles
             shoulder_angle = calculate_angle(l_sh, r_sh, (r_sh[0], 0))
             neck_angle = calculate_angle(l_ear, l_sh, (l_sh[0], 0))
             spine_angle = calculate_angle(mid_ear, mid_sh, mid_hip)
@@ -192,9 +202,8 @@ class PostureApp:
                 else:
                     posture_status = "Good Posture"
 
-            is_bad_posture = (posture_status == "Poor Posture")
+            is_bad_posture = posture_status == "Poor Posture"
 
-            # Time tracking for posture
             if is_bad_posture:
                 if self.bad_posture_start is None:
                     self.bad_posture_start = time.time()
@@ -207,7 +216,6 @@ class PostureApp:
             mp_drawing.draw_landmarks(
                 frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-        # GUI updates
         self.status_var.set(posture_status)
         self.status_label.configure(
             foreground="green" if posture_status == "Good Posture" else "red")
