@@ -6,6 +6,7 @@
 
 Run the following in the terminal to install libraries
 
-pip install opencv-python mediapipe numpy pyttsx3 pillow scikit-learn
+pip install opencv-python mediapipe scikit-learn pandas joblib pyttsx3 pillow
+
 
 
