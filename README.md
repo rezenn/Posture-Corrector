@@ -1,8 +1,6 @@
 ﻿# Posture-Corrector
 
- This Python program is a real-time posture corrector using your webcam. It uses MediaPipe Pose Detection and computer vision
-
- before cloning and running this repo, the libraries should be installed
+ This Python program is a real-time posture corrector using your webcam.
 
 Run the following in the terminal to install libraries
 
