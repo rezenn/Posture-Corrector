@@ -29,12 +29,16 @@ pip install -r requirements.txt
 ---
  collect_data.py
  collects data for good and bad pasture:
+ 
  Sit in a good posture → press g
+ 
  Sit in a poor posture → press p
 
  ---
   train_model.py
+  
   This trains a classifier and saves: posture_model.pkl
+  
   You'll see the accuracy and a classification report in terminal
 
 ---
