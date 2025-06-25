@@ -1,21 +1,13 @@
-import os
 import cv2
 import mediapipe as mp
 import numpy as np
 import csv
-<< << << < HEAD
-== == == =
->>>>>> > d3a27d374fedd9d9b1acd893c002ac5b97b59a02
+import os
 
 # MediaPipe Setup
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
 cap = cv2.VideoCapture(0)
-
-<< << << < HEAD
-== == == =
-
->>>>>> > d3a27d374fedd9d9b1acd893c002ac5b97b59a02
 
 
 def calculate_angle(a, b, c):
