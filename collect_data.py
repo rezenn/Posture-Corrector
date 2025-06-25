@@ -2,12 +2,12 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import csv
+import os
 
 # MediaPipe Setup
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
 cap = cv2.VideoCapture(0)
-
 
 def calculate_angle(a, b, c):
     a, b, c = np.array(a), np.array(b), np.array(c)
@@ -16,11 +16,16 @@ def calculate_angle(a, b, c):
     cosine = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-7)
     return np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0)))
 
-
 print("Press 'g' for good posture, 'p' for poor posture, 'q' to quit.")
-with open("posture_data.csv", "w", newline='') as f:
+
+filename = "posture_data.csv"
+file_exists = os.path.isfile(filename)
+is_empty = not file_exists or os.path.getsize(filename) == 0  # True if new or empty
+
+with open(filename, "a", newline='') as f:
     writer = csv.writer(f)
-    writer.writerow(["shoulder", "neck", "spine", "symmetry", "label"])
+    if is_empty:
+        writer.writerow(["shoulder", "neck", "spine", "symmetry", "label"])
 
     while True:
         ret, frame = cap.read()
@@ -62,11 +67,11 @@ with open("posture_data.csv", "w", newline='') as f:
 
         if key == ord('g'):
             writer.writerow([shoulder_angle, neck_angle,
-                            spine_angle, symmetry, "good"])
+                             spine_angle, symmetry, "good"])
             print("✅ Saved GOOD posture")
         elif key == ord('p'):
             writer.writerow([shoulder_angle, neck_angle,
-                            spine_angle, symmetry, "poor"])
+                             spine_angle, symmetry, "poor"])
             print("⚠️ Saved POOR posture")
         elif key == ord('q'):
             break
