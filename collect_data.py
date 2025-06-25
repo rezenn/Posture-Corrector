@@ -1,13 +1,22 @@
+import os
 import cv2
 import mediapipe as mp
 import numpy as np
 import csv
-import os
+<< << << < HEAD
+== == == =
+>>>>>> > d3a27d374fedd9d9b1acd893c002ac5b97b59a02
 
 # MediaPipe Setup
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
 cap = cv2.VideoCapture(0)
+
+<< << << < HEAD
+== == == =
+
+>>>>>> > d3a27d374fedd9d9b1acd893c002ac5b97b59a02
+
 
 def calculate_angle(a, b, c):
     a, b, c = np.array(a), np.array(b), np.array(c)
@@ -16,11 +25,13 @@ def calculate_angle(a, b, c):
     cosine = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-7)
     return np.degrees(np.arccos(np.clip(cosine, -1.0, 1.0)))
 
+
 print("Press 'g' for good posture, 'p' for poor posture, 'q' to quit.")
 
 filename = "posture_data.csv"
 file_exists = os.path.isfile(filename)
-is_empty = not file_exists or os.path.getsize(filename) == 0  # True if new or empty
+is_empty = not file_exists or os.path.getsize(
+    filename) == 0  # True if new or empty
 
 with open(filename, "a", newline='') as f:
     writer = csv.writer(f)
