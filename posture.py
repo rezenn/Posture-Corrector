@@ -11,6 +11,9 @@ import joblib
 from gtts import gTTS
 import os
 import pygame
+import csv
+from datetime import datetime
+from fpdf import FPDF
 
 # Load AI model
 model_loaded = False
@@ -74,8 +77,8 @@ def calculate_angle(a, b, c):
 class PostureApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Posture Monitor AI")
-        self.root.geometry("900x720")
+        self.root.title("Upryt")
+        self.root.geometry("1200x800")
         self.root.configure(bg="#f0f2f5")
 
         self.language = tk.StringVar(value="English")
@@ -83,22 +86,45 @@ class PostureApp:
         self.alert_cooldown = 1
         self.last_alert_time = 0
 
+        self.session_active = False
+        self.start_time = None
+        self.good_posture_time = 0
+        self.bad_posture_time = 0
+        self.last_posture = None
+        self.posture_change_time = self.start_time
+        self.correction_count = 0
+        self.posture_change_count = 0
+        self.max_good_streak = 0
+        self.max_poor_streak = 0
+        self.current_streak_start = self.start_time
+        self.current_streak_type = None
+
         TITLE_FONT = ("Segoe UI", 22, "bold")
         LABEL_FONT = ("Segoe UI", 12)
         STATUS_FONT = ("Segoe UI", 16, "bold")
         ANGLE_FONT = ("Consolas", 11)
 
-        tk.Label(root, text="Posture Monitoring System", font=TITLE_FONT,
+        main_frame = ttk.Frame(root)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side="left", fill="both", expand=True)
+
+        right_frame = ttk.Frame(main_frame, width=350)
+        right_frame.pack(side="right", fill="both")
+        right_frame.pack_propagate(False)
+
+        tk.Label(left_frame, text="Posture Monitoring System", font=TITLE_FONT,
                  bg="#f0f2f5", fg="#2c3e50").pack(pady=(15, 10))
 
-        lang_frame = ttk.Frame(root, padding=5)
+        lang_frame = ttk.Frame(left_frame, padding=5)
         lang_frame.pack()
         ttk.Label(lang_frame, text="Language:",
                   font=LABEL_FONT).pack(side="left", padx=5)
         ttk.OptionMenu(lang_frame, self.language, "English",
                        "English", "Nepali").pack(side="left")
 
-        status_frame = ttk.Frame(root, padding=10)
+        status_frame = ttk.Frame(left_frame, padding=10)
         status_frame.pack(pady=(15, 5))
 
         self.status_var = tk.StringVar(value="Initializing...")
@@ -116,10 +142,44 @@ class PostureApp:
                   background="#ffffff", foreground="#333333", relief="groove", padding=4).grid(
             row=2, column=0, columnspan=2, sticky="we", pady=5)
 
-        video_frame = ttk.LabelFrame(root, text="Live Camera Feed", padding=10)
-        video_frame.pack(padx=10, pady=20)
+        video_frame = ttk.LabelFrame(
+            left_frame, text="Live Camera Feed", padding=10)
+        video_frame.pack(fill="both", expand=True, padx=10, pady=10)
         self.video_label = ttk.Label(video_frame)
         self.video_label.pack()
+
+        # Right panel content
+        stats_frame = ttk.LabelFrame(
+            right_frame, text="Session Statistics", padding=15)
+        stats_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Create all stats labels and variables
+        self.stats_vars = {
+            "Session Time": tk.StringVar(value="0s"),
+            "Good Posture Time": tk.StringVar(value="0s"),
+            "Poor Posture Time": tk.StringVar(value="0s"),
+            "Corrections": tk.StringVar(value="0"),
+            "Posture Changes": tk.StringVar(value="0"),
+            "Current Streak": tk.StringVar(value="0s (Good)"),
+            "Max Good Streak": tk.StringVar(value="0s"),
+            "Max Poor Streak": tk.StringVar(value="0s"),
+            "Good Posture %": tk.StringVar(value="0%")
+        }
+
+        for i, (text, var) in enumerate(self.stats_vars.items()):
+            ttk.Label(stats_frame, text=text, font=LABEL_FONT).grid(
+                row=i, column=0, sticky="w", padx=5, pady=3)
+            ttk.Label(stats_frame, textvariable=var, font=LABEL_FONT).grid(
+                row=i, column=1, sticky="e", padx=5, pady=3)
+
+        # Buttons frame
+        buttons_frame = ttk.Frame(right_frame)
+        buttons_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        ttk.Button(buttons_frame, text="Export CSV",
+                   command=self.export_stats).pack(side="left", fill="x", expand=True, padx=5)
+        ttk.Button(buttons_frame, text="Export PDF",
+                   command=self.export_pdf).pack(side="left", fill="x", expand=True, padx=5)
 
         self.cap = cv2.VideoCapture(0)
         self.update_video()
@@ -138,6 +198,13 @@ class PostureApp:
         if not ret:
             self.status_var.set("Camera error.")
             return
+
+        # Start session timer when the first valid frame is received
+        if not self.session_active:
+            self.session_active = True
+            self.start_time = time.time()
+            self.posture_change_time = self.start_time
+            self.current_streak_start = self.start_time
 
         frame = cv2.flip(frame, 1)
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -210,6 +277,9 @@ class PostureApp:
                 elif time.time() - self.bad_posture_start > 2:
                     self.speak_alert("Please fix your posture.",
                                      "कृपया आफ्नो बस्ने तरिका सुधार गर्नुहोस्।")
+                    self.correction_count += 1
+                    self.stats_vars["Corrections"].set(
+                        str(self.correction_count))
             else:
                 self.bad_posture_start = None
 
@@ -220,7 +290,7 @@ class PostureApp:
         self.status_label.configure(
             foreground="green" if posture_status == "Good Posture" else "red")
         self.angle_var.set(
-            f"{shoulder_angle:.1f}, {neck_angle:.1f}, {spine_angle:.1f}, Δ={symmetry_diff:.1f} | Distance: {eye_distance:.1f}px ({distance_status})")
+            f"{shoulder_angle:.1f}°, {neck_angle:.1f}°, {spine_angle:.1f}°, Δ={symmetry_diff:.1f}° | Distance: {eye_distance:.1f}px ({distance_status})")
 
         display_frame = cv2.putText(frame.copy(), posture_status, (10, 30),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1,
@@ -231,11 +301,120 @@ class PostureApp:
         self.video_label.imgtk = imgtk
         self.video_label.configure(image=imgtk)
 
-        self.root.after(10, self.update_video)
+        # Update statistics
+        now = time.time()
+        session_duration = now - self.start_time
+
+        # Update posture times
+        if posture_status == "Good Posture":
+            self.good_posture_time += 0.1  # Since we update every 100ms (0.1s)
+        else:
+            self.bad_posture_time += 0.1
+
+        # Handle posture changes and streaks
+        if posture_status != self.last_posture:
+            self.posture_change_count += 1
+            self.stats_vars["Posture Changes"].set(
+                str(self.posture_change_count))
+
+            # Update streaks
+            if posture_status == "Good Posture":
+                # Just switched to good posture
+                streak_duration = now - self.current_streak_start
+                if self.current_streak_type == "Poor":
+                    if streak_duration > self.max_poor_streak:
+                        self.max_poor_streak = streak_duration
+                        self.stats_vars["Max Poor Streak"].set(
+                            f"{int(streak_duration)}s")
+            else:
+                # Just switched to poor posture
+                streak_duration = now - self.current_streak_start
+                if self.current_streak_type == "Good":
+                    if streak_duration > self.max_good_streak:
+                        self.max_good_streak = streak_duration
+                        self.stats_vars["Max Good Streak"].set(
+                            f"{int(streak_duration)}s")
+
+            # Reset current streak
+            self.current_streak_start = now
+            self.current_streak_type = "Good" if posture_status == "Good Posture" else "Poor"
+
+        # Update current streak display
+        current_streak_duration = now - self.current_streak_start
+        self.stats_vars["Current Streak"].set(
+            f"{int(current_streak_duration)}s ({self.current_streak_type})" if self.current_streak_type else "0s")
+
+        self.last_posture = posture_status
+
+        # Update all stats
+        self.stats_vars["Session Time"].set(f"{int(session_duration)}s")
+        self.stats_vars["Good Posture Time"].set(
+            f"{int(self.good_posture_time)}s")
+        self.stats_vars["Poor Posture Time"].set(
+            f"{int(self.bad_posture_time)}s")
+
+        # Calculate and update good posture percentage
+        if session_duration > 0:
+            good_percentage = int(
+                (self.good_posture_time / session_duration) * 100)
+            self.stats_vars["Good Posture %"].set(f"{good_percentage}%")
+
+        self.root.after(100, self.update_video)
 
     def on_close(self):
         self.cap.release()
         self.root.destroy()
+
+    def export_stats(self):
+        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"posture_stats_{now}.csv"
+        with open(filename, mode="w", newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Metric", "Value"])
+            writer.writerow(
+                ["Session Time (s)", int(time.time() - self.start_time)])
+            writer.writerow(
+                ["Good Posture Time (s)", int(self.good_posture_time)])
+            writer.writerow(
+                ["Poor Posture Time (s)", int(self.bad_posture_time)])
+            writer.writerow(["Posture Corrections", self.correction_count])
+            writer.writerow(["Posture Changes", self.posture_change_count])
+            writer.writerow(["Max Good Streak (s)", int(self.max_good_streak)])
+            writer.writerow(["Max Poor Streak (s)", int(self.max_poor_streak)])
+        self.speak_alert("Session statistics exported successfully.",
+                         "सत्रको तथ्यांक सफलतापूर्वक निर्यात गरियो।")
+
+    def export_pdf(self):
+        now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(0, 10, "Upryt", ln=1, align="C")
+        pdf.cell(0, 10, "Posture Session Report", ln=2, align="C")
+        pdf.ln(5)
+        pdf.set_font("Arial", size=15)
+
+        data = [
+            ("Generated:", now_text),
+            ("Session Time", f"{int(time.time() - self.start_time)}s"),
+            ("Good Posture Time", f"{int(self.good_posture_time)}s"),
+            ("Poor Posture Time", f"{int(self.bad_posture_time)}s"),
+            ("Corrections", str(self.correction_count)),
+            ("Posture Changes", str(self.posture_change_count)),
+            ("Max Good Streak", f"{int(self.max_good_streak)}s"),
+            ("Max Poor Streak", f"{int(self.max_poor_streak)}s"),
+            ("Good Posture %",
+             f"{int((self.good_posture_time / (time.time() - self.start_time)) * 100)}%")
+        ]
+
+        for name, val in data:
+            pdf.cell(60, 8, name, border=1)
+            pdf.cell(80, 8, val, border=1, ln=1)
+
+        out = f"posture_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        pdf.output(out)
+        self.speak_alert("PDF exported successfully.",
+                         "पीडीएफ सफलतापूर्वक निर्यात भयो।")
 
 
 if __name__ == "__main__":
