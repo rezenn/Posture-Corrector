@@ -97,7 +97,7 @@ class PostureApp:
         self.left_frame = ttk.Frame(self.main_frame)
         self.left_frame.pack(side=LEFT, fill=BOTH, expand=YES)
 
-        # Right panel (stat
+        # Right panel (stats)
         self.right_frame = ttk.Frame(self.main_frame, width=400)
         self.right_frame.pack(side=RIGHT, fill=Y, padx=(10, 0))
 

@@ -4,8 +4,8 @@ import numpy as np
 import time
 import threading
 import pyttsx3
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
+import tkinter as tk
+from tkinter import ttk
 from PIL import Image, ImageTk
 import joblib
 from gtts import gTTS
@@ -77,162 +77,110 @@ def calculate_angle(a, b, c):
 class PostureApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Upryt - Posture Monitor")
-        self.root.geometry("1280x800")
+        self.root.title("Upryt")
+        self.root.geometry("1200x800")
+        self.root.configure(bg="#f0f2f5")
 
-        # Style configuration
-        self.style = ttk.Style(theme='superhero')
-        self.style.configure('TLabel', font=('Helvetica', 12))
-        self.style.configure('Title.TLabel', font=('Helvetica', 24, 'bold'))
-        self.style.configure('Status.TLabel', font=('Helvetica', 14, 'bold'))
-        self.style.configure('Good.TLabel', foreground='lightgreen')
-        self.style.configure('Poor.TLabel', foreground='salmon')
-        self.style.configure('Angle.TLabel', font=('Consolas', 11))
-
-        # Main container
-        self.main_frame = ttk.Frame(root)
-        self.main_frame.pack(fill=BOTH, expand=YES, padx=10, pady=10)
-
-        # Left panel (video feed)
-        self.left_frame = ttk.Frame(self.main_frame)
-        self.left_frame.pack(side=LEFT, fill=BOTH, expand=YES)
-
-        # Right panel (stat
-        self.right_frame = ttk.Frame(self.main_frame, width=400)
-        self.right_frame.pack(side=RIGHT, fill=Y, padx=(10, 0))
-
-        # Title
-        ttk.Label(self.left_frame, text="Posture Monitoring System",
-                  style='Title.TLabel').pack(pady=(0, 15))
-
-        # Language selector
-        self.language = ttk.StringVar(value="English")
-        lang_frame = ttk.Frame(self.left_frame)
-        lang_frame.pack(fill=X, pady=5)
-        ttk.Label(lang_frame, text="Language:").pack(side=LEFT, padx=5)
-        ttk.OptionMenu(lang_frame, self.language, "English",
-                       "English", "Nepali").pack(side=LEFT)
-
-        # Status display
-        self.status_frame = ttk.Labelframe(self.left_frame,
-                                           text="Posture Status",
-                                           padding=10)
-        self.status_frame.pack(fill=X, pady=10)
-
-        self.status_var = ttk.StringVar(value="Initializing...")
-        self.angle_var = ttk.StringVar(value="Angle data will appear here")
-
-        ttk.Label(self.status_frame, text="Current Status:").grid(
-            row=0, column=0, sticky=W, padx=(0, 5))
-        self.status_label = ttk.Label(
-            self.status_frame,
-            textvariable=self.status_var,
-            style='Status.TLabel'
-        )
-        self.status_label.grid(row=0, column=1, sticky=W)
-
-        ttk.Label(self.status_frame,
-                  text="Body Angles (Shoulder, Neck, Spine, Symmetry) + Distance:").grid(
-            row=1, column=0, columnspan=2, sticky=W, pady=(10, 2))
-
-        self.angle_display = ttk.Label(
-            self.status_frame,
-            textvariable=self.angle_var,
-            style='Angle.TLabel',
-            relief=SOLID,
-            padding=5,
-            width=60
-        )
-        self.angle_display.grid(
-            row=2, column=0, columnspan=2, sticky=EW, pady=5)
-
-        # Video feed
-        self.video_frame = ttk.Labelframe(
-            self.left_frame,
-            text="Live Camera Feed",
-            padding=10
-        )
-        self.video_frame.pack(fill=BOTH, expand=YES)
-        self.video_label = ttk.Label(self.video_frame)
-        self.video_label.pack(expand=YES)
-
-        # Right panel content
-        self.stats_frame = ttk.Labelframe(
-            self.right_frame,
-            text="Session Statistics",
-            padding=15
-        )
-        self.stats_frame.pack(fill=BOTH, expand=YES, pady=(0, 10))
-
-        # Statistics variables
-        self.stats_vars = {
-            "Session Time": ttk.StringVar(value="0s"),
-            "Good Posture Time": ttk.StringVar(value="0s"),
-            "Poor Posture Time": ttk.StringVar(value="0s"),
-            "Corrections": ttk.StringVar(value="0"),
-            "Posture Changes": ttk.StringVar(value="0"),
-            "Current Streak": ttk.StringVar(value="0s (Good)"),
-            "Max Good Streak": ttk.StringVar(value="0s"),
-            "Max Poor Streak": ttk.StringVar(value="0s"),
-            "Good Posture %": ttk.StringVar(value="0%")
-        }
-
-        # Create stats labels
-        for i, (text, var) in enumerate(self.stats_vars.items()):
-            ttk.Label(self.stats_frame, text=text + ":",
-                      width=20).grid(row=i, column=0, sticky=W, padx=5, pady=3)
-            ttk.Label(self.stats_frame, textvariable=var,
-                      style='TLabel').grid(row=i, column=1, sticky=E, padx=5, pady=3)
-
-        # Progress bar for good posture percentage
-        self.progress_frame = ttk.Frame(self.right_frame)
-        self.progress_frame.pack(fill=X, pady=(10, 0))
-        ttk.Label(self.progress_frame, text="Posture Score:").pack(anchor=W)
-        self.progress = ttk.Progressbar(
-            self.progress_frame,
-            orient=HORIZONTAL,
-            length=300,
-            mode='determinate',
-            bootstyle=(SUCCESS, STRIPED)
-        )
-        self.progress.pack(fill=X, pady=(5, 10))
-
-        # Export buttons
-        btn_frame = ttk.Frame(self.right_frame)
-        btn_frame.pack(fill=X, pady=(10, 0))
-
-        ttk.Button(
-            btn_frame,
-            text="Export CSV",
-            command=self.export_stats,
-            bootstyle=INFO
-        ).pack(side=LEFT, fill=X, expand=YES, padx=5)
-
-        ttk.Button(
-            btn_frame,
-            text="Export PDF",
-            command=self.export_pdf,
-            bootstyle=INFO
-        ).pack(side=LEFT, fill=X, expand=YES, padx=5)
-
-        # System variables
+        self.language = tk.StringVar(value="English")
         self.bad_posture_start = None
         self.alert_cooldown = 1
         self.last_alert_time = 0
+
         self.session_active = False
         self.start_time = None
         self.good_posture_time = 0
         self.bad_posture_time = 0
         self.last_posture = None
-        self.posture_change_time = None
+        self.posture_change_time = self.start_time
         self.correction_count = 0
         self.posture_change_count = 0
         self.max_good_streak = 0
         self.max_poor_streak = 0
-        self.current_streak_start = None
+        self.current_streak_start = self.start_time
         self.current_streak_type = None
 
-        # Start video capture
+        TITLE_FONT = ("Segoe UI", 22, "bold")
+        LABEL_FONT = ("Segoe UI", 12)
+        STATUS_FONT = ("Segoe UI", 16, "bold")
+        ANGLE_FONT = ("Consolas", 11)
+
+        main_frame = ttk.Frame(root)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side="left", fill="both", expand=True)
+
+        right_frame = ttk.Frame(main_frame, width=350)
+        right_frame.pack(side="right", fill="both")
+        right_frame.pack_propagate(False)
+
+        tk.Label(left_frame, text="Posture Monitoring System", font=TITLE_FONT,
+                 bg="#f0f2f5", fg="#2c3e50").pack(pady=(15, 10))
+
+        lang_frame = ttk.Frame(left_frame, padding=5)
+        lang_frame.pack()
+        ttk.Label(lang_frame, text="Language:",
+                  font=LABEL_FONT).pack(side="left", padx=5)
+        ttk.OptionMenu(lang_frame, self.language, "English",
+                       "English", "Nepali").pack(side="left")
+
+        status_frame = ttk.Frame(left_frame, padding=10)
+        status_frame.pack(pady=(15, 5))
+
+        self.status_var = tk.StringVar(value="Initializing...")
+        self.angle_var = tk.StringVar(value="Angle Info")
+
+        ttk.Label(status_frame, text="Posture Status:", font=LABEL_FONT).grid(
+            row=0, column=0, sticky="w", padx=(0, 5))
+        self.status_label = ttk.Label(status_frame, textvariable=self.status_var,
+                                      font=STATUS_FONT, foreground="blue")
+        self.status_label.grid(row=0, column=1, sticky="w")
+
+        ttk.Label(status_frame, text="Angles (Shoulder, Neck, Spine, Symmetry) + Distance:",
+                  font=LABEL_FONT).grid(row=1, column=0, columnspan=2, sticky="w", pady=(10, 2))
+        ttk.Label(status_frame, textvariable=self.angle_var, font=ANGLE_FONT,
+                  background="#ffffff", foreground="#333333", relief="groove", padding=4).grid(
+            row=2, column=0, columnspan=2, sticky="we", pady=5)
+
+        video_frame = ttk.LabelFrame(
+            left_frame, text="Live Camera Feed", padding=10)
+        video_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.video_label = ttk.Label(video_frame)
+        self.video_label.pack()
+
+        # Right panel content
+        stats_frame = ttk.LabelFrame(
+            right_frame, text="Session Statistics", padding=15)
+        stats_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Create all stats labels and variables
+        self.stats_vars = {
+            "Session Time": tk.StringVar(value="0s"),
+            "Good Posture Time": tk.StringVar(value="0s"),
+            "Poor Posture Time": tk.StringVar(value="0s"),
+            "Corrections": tk.StringVar(value="0"),
+            "Posture Changes": tk.StringVar(value="0"),
+            "Current Streak": tk.StringVar(value="0s (Good)"),
+            "Max Good Streak": tk.StringVar(value="0s"),
+            "Max Poor Streak": tk.StringVar(value="0s"),
+            "Good Posture %": tk.StringVar(value="0%")
+        }
+
+        for i, (text, var) in enumerate(self.stats_vars.items()):
+            ttk.Label(stats_frame, text=text, font=LABEL_FONT).grid(
+                row=i, column=0, sticky="w", padx=5, pady=3)
+            ttk.Label(stats_frame, textvariable=var, font=LABEL_FONT).grid(
+                row=i, column=1, sticky="e", padx=5, pady=3)
+
+        # Buttons frame
+        buttons_frame = ttk.Frame(right_frame)
+        buttons_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        ttk.Button(buttons_frame, text="Export CSV",
+                   command=self.export_stats).pack(side="left", fill="x", expand=True, padx=5)
+        ttk.Button(buttons_frame, text="Export PDF",
+                   command=self.export_pdf).pack(side="left", fill="x", expand=True, padx=5)
+
         self.cap = cv2.VideoCapture(0)
         self.update_video()
 
@@ -251,7 +199,7 @@ class PostureApp:
             self.status_var.set("Camera error.")
             return
 
-        # Start session timer when first frame arrives
+        # Start session timer when the first valid frame is received
         if not self.session_active:
             self.session_active = True
             self.start_time = time.time()
@@ -338,22 +286,16 @@ class PostureApp:
             mp_drawing.draw_landmarks(
                 frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-        # Update UI
         self.status_var.set(posture_status)
         self.status_label.configure(
-            style='Good.TLabel' if posture_status == "Good Posture" else 'Poor.TLabel')
+            foreground="green" if posture_status == "Good Posture" else "red")
+        self.angle_var.set(
+            f"{shoulder_angle:.1f}°, {neck_angle:.1f}°, {spine_angle:.1f}°, Δ={symmetry_diff:.1f}° | Distance: {eye_distance:.1f}px ({distance_status})")
 
-        angle_text = f"Shoulder: {shoulder_angle:.1f}° | Neck: {neck_angle:.1f}°\n"
-        angle_text += f"Spine: {spine_angle:.1f}° | Symmetry Δ: {symmetry_diff:.1f}°\n"
-        angle_text += f"Eye Distance: {eye_distance:.1f}px ({distance_status})"
-        self.angle_var.set(angle_text)
-
-        # Add status text to video frame
         display_frame = cv2.putText(frame.copy(), posture_status, (10, 30),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1,
                                     (0, 255, 0) if posture_status == "Good Posture" else (0, 0, 255), 2)
 
-        # Convert to PhotoImage
         img = Image.fromarray(cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB))
         imgtk = ImageTk.PhotoImage(image=img)
         self.video_label.imgtk = imgtk
@@ -365,7 +307,7 @@ class PostureApp:
 
         # Update posture times
         if posture_status == "Good Posture":
-            self.good_posture_time += 0.1
+            self.good_posture_time += 0.1  # Since we update every 100ms (0.1s)
         else:
             self.bad_posture_time += 0.1
 
@@ -377,6 +319,7 @@ class PostureApp:
 
             # Update streaks
             if posture_status == "Good Posture":
+                # Just switched to good posture
                 streak_duration = now - self.current_streak_start
                 if self.current_streak_type == "Poor":
                     if streak_duration > self.max_poor_streak:
@@ -384,6 +327,7 @@ class PostureApp:
                         self.stats_vars["Max Poor Streak"].set(
                             f"{int(streak_duration)}s")
             else:
+                # Just switched to poor posture
                 streak_duration = now - self.current_streak_start
                 if self.current_streak_type == "Good":
                     if streak_duration > self.max_good_streak:
@@ -408,17 +352,12 @@ class PostureApp:
             f"{int(self.good_posture_time)}s")
         self.stats_vars["Poor Posture Time"].set(
             f"{int(self.bad_posture_time)}s")
-        self.stats_vars["Max Good Streak"].set(f"{int(self.max_good_streak)}s")
-        self.stats_vars["Max Poor Streak"].set(f"{int(self.max_poor_streak)}s")
 
-        # Update progress bar
+        # Calculate and update good posture percentage
         if session_duration > 0:
             good_percentage = int(
                 (self.good_posture_time / session_duration) * 100)
             self.stats_vars["Good Posture %"].set(f"{good_percentage}%")
-            self.progress['value'] = good_percentage
-            self.progress.configure(
-                bootstyle=SUCCESS if good_percentage > 50 else DANGER)
 
         self.root.after(100, self.update_video)
 
@@ -479,7 +418,7 @@ class PostureApp:
 
 
 if __name__ == "__main__":
-    root = ttk.Window(title="Upryt", themename="darkly")
+    root = tk.Tk()
     app = PostureApp(root)
     root.protocol("WM_DELETE_WINDOW", app.on_close)
     root.mainloop()
