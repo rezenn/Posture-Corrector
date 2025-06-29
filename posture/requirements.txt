@@ -7,3 +7,4 @@ joblib
 pyttsx3
 Pillow
 fpdf
+ttkbootstrap
