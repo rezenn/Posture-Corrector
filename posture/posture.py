@@ -14,7 +14,7 @@ import pygame
 import csv
 from datetime import datetime
 from fpdf import FPDF
-
+import requests
 # Load AI model
 model_loaded = False
 try:
@@ -75,6 +75,16 @@ def calculate_angle(a, b, c):
 
 
 class PostureApp:
+    def send_data_to_backend(self, payload):
+        try:
+            print("Sending payload to backend...")
+            response = requests.post("http://localhost:5000/api/posture", json=payload, timeout=1)
+            print("✅ Backend response:", response.status_code, response.text)
+        except Exception as e:
+            print("Failed to send to backend:", e)
+
+    
+
     def __init__(self, root):
         self.root = root
         self.root.title("Upryt - Posture Monitor")
@@ -412,6 +422,7 @@ class PostureApp:
         self.stats_vars["Max Poor Streak"].set(f"{int(self.max_poor_streak)}s")
 
         # Update progress bar
+        # Update progress bar and stats if session is active
         if session_duration > 0:
             good_percentage = int(
                 (self.good_posture_time / session_duration) * 100)
@@ -419,6 +430,37 @@ class PostureApp:
             self.progress['value'] = good_percentage
             self.progress.configure(
                 bootstyle=SUCCESS if good_percentage > 50 else DANGER)
+
+            # Realtime backend update every 1 second
+            if not hasattr(self, 'last_backend_send'):
+                self.last_backend_send = 0
+
+            if time.time() - self.last_backend_send > 1:
+                posture_score = good_percentage  # use it directly or refine later
+                payload = {
+                    "posture": posture_status,
+                    "shoulder_angle": round(shoulder_angle, 2),
+                    "neck_angle": round(neck_angle, 2),
+                    "spine_angle": round(spine_angle, 2),
+                    "symmetry_score": round(symmetry_diff, 2),
+                    "eye_distance": round(eye_distance, 2),
+                    "posture_score": posture_score,
+                    "session": {
+                        "session_time": int(session_duration),
+                        "good_posture_time": int(self.good_posture_time),
+                        "poor_posture_time": int(self.bad_posture_time),
+                        "corrections": self.correction_count,
+                        "posture_changes": self.posture_change_count,
+                        "current_streak": int(now - self.current_streak_start),
+                        "max_good_streak": int(self.max_good_streak),
+                        "max_poor_streak": int(self.max_poor_streak),
+                        "good_posture_percent": good_percentage
+                    }
+                }
+
+                self.send_data_to_backend(payload)
+                self.last_backend_send = time.time()
+
 
         self.root.after(100, self.update_video)
 

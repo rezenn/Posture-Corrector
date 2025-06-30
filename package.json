@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "tailwindcss": "^4.1.11"
+  },
+  "name": "posture-corrector",
+  "version": "1.0.0",
+  "description": "A desktop app using webcam + AI to monitor your sitting posture in real time and give feedback via voice alerts and GUI.",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
