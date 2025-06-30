@@ -30,10 +30,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <WidthWrapper>
+        <div className="flex justify-center w-full">
         <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex overflow-hidden">
-          
           {/* Left side: Login Form */}
           <div className="w-1/2 p-8 flex flex-col justify-center">
             <h2 className="text-2xl font-bold mb-2 text-gray-800">Welcome Back!</h2>
@@ -108,6 +108,7 @@ export default function Login() {
               Log in and stay upright, always.
             </p>
           </div>
+        </div>
         </div>
       </WidthWrapper>
     </div>
