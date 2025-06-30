@@ -9,6 +9,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import WidthWrapper from "../components/WidthWrapper"
 import { FcGoogle } from "react-icons/fc"
 import { FaApple } from "react-icons/fa"
+import UprytLogo from '../assets/uprytwhite.png'; // adjust path as needed
+
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Enter a valid email address" }),
@@ -73,7 +75,7 @@ export default function Login() {
                   <a href="#" className="text-blue-600 hover:underline">Forgot Password?</a>
                 </div>
 
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full bg-blue-950">
                   Login
                 </Button>
               </form>
@@ -102,12 +104,19 @@ export default function Login() {
           </div>
 
           {/* Right side: Info/Branding */}
-          <div className="w-1/2 bg-blue-100 hidden md:flex items-center justify-center p-8">
-            <p className="text-blue-800 text-xl font-semibold text-center">
-              Enhance your posture with UPRYT.<br />
-              Log in and stay upright, always.
+        <div className="w-1/2 bg-blue-950 hidden md:flex items-center justify-center p-8">
+        <div className="flex flex-col items-center justify-center text-center space-y-4 mt-[-100px]">
+            <img
+            src={UprytLogo} alt="Upryt Logo"
+            className="w-30 h-30 object-contain"/>
+            <p className="text-white font-semibold text-xl">The New Standard in Workplace Wellness.</p>
+            <p className="text-white font-small">
+            UPRYT helps you correct your sitting posture in real-time using AI.
+            Say goodbye to slouching and hello to better health-effortlessly.
             </p>
-          </div>
+        </div>
+        </div>
+
         </div>
         </div>
       </WidthWrapper>
