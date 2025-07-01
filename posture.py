@@ -84,7 +84,7 @@ class PostureApp:
         self.style = ttk.Style(theme='superhero')
         self.style.configure('TLabel', font=('Helvetica', 12))
         self.style.configure('Title.TLabel', font=('Helvetica', 24, 'bold'))
-        self.style.configure('Status.TLabel', font=('Helvetica', 14, 'bold'))
+        self.style.configure('Status.TLabel', font=('Helvetica', 24, 'bold'))
         self.style.configure('Good.TLabel', foreground='lightgreen')
         self.style.configure('Poor.TLabel', foreground='salmon')
         self.style.configure('Angle.TLabel', font=('Consolas', 11))
@@ -128,9 +128,21 @@ class PostureApp:
             self.status_frame,
             textvariable=self.status_var,
             style='Status.TLabel',
-            width=15
+            width=25,
+            anchor="center"
         )
         self.status_label.grid(row=0, column=1, sticky=W)
+        # Feedback label for detailed issues
+        self.feedback_var = ttk.StringVar(value="")
+        self.feedback_label = ttk.Label(
+            self.status_frame,
+            textvariable=self.feedback_var,
+            font=('Helvetica', 25, 'italic'),
+            foreground='red',
+            wraplength=1500,
+            anchor="w"
+        )
+        self.feedback_label.grid(row=3, column=0, columnspan=2, sticky=W, pady=(5, 0))
 
         ttk.Label(self.status_frame,
                   text="Body Angles (Shoulder, Neck, Spine, Symmetry) + Distance:").grid(
@@ -337,13 +349,40 @@ class PostureApp:
                 if self.bad_posture_start is None:
                     self.bad_posture_start = time.time()
                 elif time.time() - self.bad_posture_start > 2:
-                    self.speak_alert("Please fix your posture.",
-                                     "कृपया आफ्नो बस्ने तरिका सुधार गर्नुहोस्।")
+                    # Determine specific problem
+                    issues = []
+                    if shoulder_angle < 85:
+                        issues.append("shoulders are not level")
+                    if neck_angle < 25:
+                        issues.append("neck is leaning forward")
+                    if spine_angle < 140:
+                        issues.append("spine is bent")
+                    if symmetry_diff > 15:
+                        issues.append("body is not symmetrical")
+
+                    issue_translations = {
+                        "shoulders are not level": "काँधहरू स्तर छैनन्",
+                        "neck is leaning forward": "घाँटी अगाडि झुकिएको छ",
+                        "spine is bent": "मेरुदण्ड बाङ्गिएको छ",
+                        "body is not symmetrical": "शरीर सममित छैन"
+                    }
+
+                    en_feedback = "Please fix your posture: " + ", ".join(issues) + "."
+                    np_feedback = "कृपया तपाईंको बसाइ सुधार गर्नुहोस्: " + "। ".join(
+                        [issue_translations[i] for i in issues]) + "।"
+
+                    self.speak_alert(en_feedback, np_feedback)
+
+                    # Show the feedback on screen too
+                    self.feedback_var.set(en_feedback)
+
                     self.correction_count += 1
-                    self.stats_vars["Corrections"].set(
-                        str(self.correction_count))
+                    self.stats_vars["Corrections"].set(str(self.correction_count))
+
             else:
                 self.bad_posture_start = None
+                self.feedback_var.set("")  # Clear previous feedback
+
 
             mp_drawing.draw_landmarks(
                 frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
