@@ -2,7 +2,7 @@ import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import { validationResult } from 'express-validator';
 
-export const createUser = {
+const createUser = {
   async register(req, res) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -21,3 +21,5 @@ export const createUser = {
     }
   }
 };
+
+export default createUser;
