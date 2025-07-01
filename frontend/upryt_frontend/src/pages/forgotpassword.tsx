@@ -32,7 +32,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <WidthWrapper>
         <div className="flex justify-center w-full">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl h-[550px] flex overflow-hidden">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl h-[600px] flex overflow-hidden">
             {/* Left side: Forgot Password Form */}
             <div className="w-1/2 p-8 flex flex-col justify-center">
               <h2 className="text-2xl font-bold mb-2 text-gray-800">Forgot Password?</h2>
