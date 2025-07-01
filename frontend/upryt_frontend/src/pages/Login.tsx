@@ -3,13 +3,16 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { Link } from "react-router-dom"
+import { motion } from "framer-motion"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../components/ui/form"
 import WidthWrapper from "../components/WidthWrapper"
 import { FcGoogle } from "react-icons/fc"
 import { FaApple } from "react-icons/fa"
-import UprytLogo from '../assets/uprytwhite.png'; // adjust path as needed
+import UprytLogo from '../assets/uprytwhite.png'; 
+
 
 
 const loginSchema = z.object({
@@ -35,7 +38,7 @@ export default function Login() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <WidthWrapper>
         <div className="flex justify-center w-full">
-        <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex h-[550px] overflow-hidden">
           {/* Left side: Login Form */}
           <div className="w-1/2 p-8 flex flex-col justify-center">
             <h2 className="text-2xl font-bold mb-2 text-gray-800">Welcome Back!</h2>
@@ -72,7 +75,7 @@ export default function Login() {
                 />
 
                 <div className="text-sm text-right">
-                  <a href="#" className="text-blue-600 hover:underline">Forgot Password?</a>
+                  <Link to="/forgotpassword" className="text-blue-950 hover:underline">Forgot Password?</Link>
                 </div>
 
                 <Button type="submit" className="w-full bg-blue-950">
@@ -80,7 +83,6 @@ export default function Login() {
                 </Button>
               </form>
             </Form>
-
             <div className="my-4 flex items-center justify-between">
               <hr className="w-full border-gray-300" />
               <span className="px-2 text-gray-400 text-sm">OR</span>
@@ -99,24 +101,32 @@ export default function Login() {
             </div>
 
             <p className="text-sm text-center mt-6 text-gray-500">
-              Don't have an account? <a href="#" className="text-blue-600 hover:underline">Sign up</a>
+              Don't have an account? <a href="/register" className="text-blue-950 hover:underline">Sign up</a>
             </p>
           </div>
 
           {/* Right side: Info/Branding */}
         <div className="w-1/2 bg-blue-950 hidden md:flex items-center justify-center p-8">
-        <div className="flex flex-col items-center justify-center text-center space-y-4 mt-[-100px]">
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 2, ease: "easeOut"}}
+            className="flex flex-col items-center justify-center text-center space-y-4 mt-[-100px]"
+          >
             <img
-            src={UprytLogo} alt="Upryt Logo"
-            className="w-30 h-30 object-contain"/>
-            <p className="text-white font-semibold text-xl">The New Standard in Workplace Wellness.</p>
-            <p className="text-white font-small">
-            UPRYT helps you correct your sitting posture in real-time using AI.
-            Say goodbye to slouching and hello to better health-effortlessly.
+              src={UprytLogo}
+              alt="Upryt Logo"
+              className="w-30 h-30 object-contain"
+            />
+            <p className="text-white font-semibold text-xl">
+              The New Standard in Workplace Wellness.
             </p>
+            <p className="text-white text-sm">
+              UPRYT helps you correct your sitting posture in real-time using AI.
+              Say goodbye to slouching and hello to better health—effortlessly.
+            </p>
+          </motion.div>
         </div>
-        </div>
-
         </div>
         </div>
       </WidthWrapper>
