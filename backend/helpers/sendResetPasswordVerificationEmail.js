@@ -1,16 +1,15 @@
-import React from "react";
-import VerificationEmail from "../emails/VerificationEmail.jsx";
+import ResetPasswordEmail from "../../emails/ResetPasswordEmail";
 import nodemailer from "nodemailer";
 import { render } from '@react-email/components';
 
-export const sendVerificationEmail = async (
+export const sendResetPasswordVerificationEmail = async (
     fullName,
     email,
-    otp,
+    otp
 ) => {
     try {
         const html = await render(
-            <VerificationEmail fullName={fullName} email={email} otp={otp} />
+            <ResetPasswordEmail fullName={fullName} email={email} otp={otp} />
         );
 
         const transporter = nodemailer.createTransport({
@@ -25,21 +24,22 @@ export const sendVerificationEmail = async (
         await transporter.sendMail({
             from: `"UPRYT" <${process.env.GMAIL_USER}>`,
             to: email,
-            subject: "UPRYT | Your Verification Code",
+            subject: "UPRYT | Verification Code for reseting password",
             html
         });
 
+
         return {
             success: true,
-            message: "Verification email sent  successfully."
+            message: "Verification email for reseting password sent  successfully"
         };
     }
     catch (error) {
-        console.log("Error sending verification email: ", error);
+        console.log("Error sending verification for reseting password email: ", error);
 
         return {
             success: false,
-            message: "Failed to send verification email."
+            message: "Failed to send verification for reseting password email"
         };
     }
 };
