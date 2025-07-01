@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { validationResult } from 'express-validator';
 // import { sendVerificationEmail } from "../helpers/sendVerificationEmail.js";
 import { sendVerificationEmail } from '../helpers/sendVerificationEmail.js';
+import { sendPasswordResetOTP } from '../helpers/sendPasswordResetOTP.js';
 
 
 export const createUser = async (req, res) => {
@@ -160,5 +161,152 @@ export const handleSendEmail = async (req, res) => {
   } catch (error) {
     console.error('❌ Email failed:', error);
     res.status(500).json({ error: 'Failed to send email' });
+  }
+};
+
+
+
+
+
+
+
+// STEP 1: Forgot Password → Send OTP
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Please, enter email" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid email address. User not available!" });
+    }
+
+    // Generate OTP and expiry
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiryDate = new Date();
+    expiryDate.setMinutes(expiryDate.getMinutes() + 10); // valid for 10 mins
+
+    // Update user with OTP
+    user.verifyEmailResetPassword = otp;
+    user.verifyEmailResetPasswordExpiryDate = expiryDate;
+    await user.save();
+
+    const emailResponse = await sendResetPasswordVerificationEmail(user.fullName, email, otp);
+
+    if (!emailResponse.success) {
+      return res.status(500).json({
+        success: false,
+        message: emailResponse.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset instructions have been sent to your email",
+    });
+  } catch (error) {
+    console.error("Error while reseting password:", error);
+    return res.status(500).json({ error: "Internal server error!" });
+  }
+};
+
+// STEP 2: Verify OTP
+export const verifyOTPForResetPassword = async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ error: "Please, enter email and OTP" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid email address. User not available!" });
+    }
+
+    const isCodeValid = user.verifyEmailResetPassword === otp;
+    const isCodeNotExpired = user.verifyEmailResetPasswordExpiryDate && user.verifyEmailResetPasswordExpiryDate > new Date();
+
+    if (isCodeValid && isCodeNotExpired) {
+      return res.status(200).json({ success: true, message: "OTP verified successfully" });
+    } else if (!isCodeNotExpired) {
+      return res.status(400).json({ success: false, message: "OTP has expired!" });
+    } else {
+      return res.status(400).json({ success: false, message: "Incorrect OTP!" });
+    }
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    return res.status(500).json({ success: false, message: "Internal server error while verifying OTP" });
+  }
+};
+
+// STEP 3: Reset Password
+export const resetPassword = async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({ error: "Please, enter email and new password" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid email address. User not available!" });
+    }
+
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    user.verifyEmailResetPassword = "";
+    user.verifyEmailResetPasswordExpiryDate = null;
+
+    await user.save();
+
+    return res.status(200).json({ success: true, message: "Password reset successfully" });
+  } catch (error) {
+    console.log("Error while resetting password:", error);
+    return res.status(500).json({ error: "Internal server error!" });
+  }
+};
+
+
+
+
+// controllers/UserController.js
+
+export const findUserByUsername = async (req, res) => {
+  try {
+    const username = req.query.username;
+
+    if (!username) {
+      return res.status(400).json({ success: false, message: "Username is required" });
+    }
+
+    const user = await User.findOne({ username: username,isVerified:true}); // case-insensitive match
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        username: user.username,
+        isVerified: user.isVerified
+      }
+    });
+  } catch (error) {
+    console.error("Error finding user by username:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

@@ -3,21 +3,11 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-
+import postureRoutes from './routes/postureRoutes.js';
+import connectDB from './db/db.js';
+import  UserRoute from './routes/UserRoute.js'
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-app.use(bodyParser.json());
-
-app.post('/api/posture', (req, res) => {
-  const postureData = req.body;
-  console.log('📥 Received posture data:', postureData);
-  res.send({ status: 'received', data: postureData });
-});
-
-
-
 import { generateOTP } from './utils/generateOTP.js';
 
 app.use(cors());
@@ -58,5 +48,7 @@ app.use('/api', postureRoutes);
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
-export default app; 
 
+
+connectDB();
+export default app;
