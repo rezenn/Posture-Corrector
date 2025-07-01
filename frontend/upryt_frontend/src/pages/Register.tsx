@@ -44,8 +44,7 @@ export default function Register() {
     },
   })
 
-  form.watch()
-  console.log(form.watch())
+  
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("Submitting...")
