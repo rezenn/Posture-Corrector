@@ -55,15 +55,11 @@ def speak_np(text):
     threading.Thread(target=play_nepali, daemon=True).start()
 
 # English TTS using pyttsx3
-
-
 def speak_en(text):
     threading.Thread(target=lambda: tts_engine.say(
         text) or tts_engine.runAndWait(), daemon=True).start()
 
 # Angle calculator
-
-
 def calculate_angle(a, b, c):
     a, b, c = np.array(a), np.array(b), np.array(c)
     ba = a - b
@@ -77,7 +73,7 @@ def calculate_angle(a, b, c):
 class PostureApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Upryt - Posture Monitor")
+        self.root.title("Upryt")
         self.root.geometry("1280x800")
 
         # Style configuration
@@ -102,7 +98,7 @@ class PostureApp:
         self.right_frame.pack(side=RIGHT, fill=Y, expand=NO, padx=(10, 0))
 
         # Title
-        ttk.Label(self.left_frame, text="Posture Monitoring System",
+        ttk.Label(self.left_frame, text="Upryt - Posture Monitoring System",
                   style='Title.TLabel').pack(pady=(0, 15))
 
         # Language selector
@@ -133,16 +129,24 @@ class PostureApp:
         )
         self.status_label.grid(row=0, column=1, sticky=W)
         # Feedback label for detailed issues
-        self.feedback_var = ttk.StringVar(value="")
+        
+        # Feedback label for detailed issues
+        self.feedback_var = ttk.StringVar(value=" " * 200)  
+
+        self.feedback_frame = ttk.Frame(self.status_frame)
+        self.feedback_frame.grid(row=3, column=0, columnspan=2, sticky=EW, pady=(5, 0))
+
         self.feedback_label = ttk.Label(
-            self.status_frame,
+            self.feedback_frame,
             textvariable=self.feedback_var,
-            font=('Helvetica', 25, 'italic'),
-            foreground='red',
-            wraplength=1500,
-            anchor="w"
+            font=('arial', 20, 'italic'),
+            foreground='yellow',
+            padding=10,
+            wraplength=1000,
+            anchor="w",
+            justify="left"
         )
-        self.feedback_label.grid(row=3, column=0, columnspan=2, sticky=W, pady=(5, 0))
+        self.feedback_label.pack(fill=X)
 
         ttk.Label(self.status_frame,
                   text="Body Angles (Shoulder, Neck, Spine, Symmetry) + Distance:").grid(
@@ -374,7 +378,10 @@ class PostureApp:
                     self.speak_alert(en_feedback, np_feedback)
 
                     # Show the feedback on screen too
-                    self.feedback_var.set(en_feedback)
+                    if self.language.get() == "Nepali":
+                        self.feedback_var.set(np_feedback if np_feedback else " " * 200)
+                    else:
+                        self.feedback_var.set(en_feedback if en_feedback else " " * 200)
 
                     self.correction_count += 1
                     self.stats_vars["Corrections"].set(str(self.correction_count))
