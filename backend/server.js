@@ -8,11 +8,10 @@ import connectDB from './db/db.js';
 import  UserRoute from './routes/UserRoute.js'
 const app = express();
 const PORT = process.env.PORT || 3000;
+import { generateOTP } from './utils/generateOTP.js';
 
-connectDB();
 app.use(cors());
-app.use(bodyParser.json());
-
+app.use(express.json()); // ✅ this one is very important
 
 
 // connectDB()
@@ -31,6 +30,8 @@ app.use(bodyParser.json());
 // Middleware
 app.use(cors({
   origin: "http://localhost:5173",
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+
   credentials: true
 }));
 
@@ -41,12 +42,11 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-app.use('/api/users', userRoute);
+app.use('/api/users', UserRoute);
 
 app.use('/api', postureRoutes);
-app.use('/api/auth',UserRoute)
-app.listen(port, () => {
-  console.log(`✅ Server running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
 
 

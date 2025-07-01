@@ -2,7 +2,8 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import { validationResult } from 'express-validator';
-import { sendVerificationEmail } from "../helpers/sendVerificationEmail.jsx";
+// import { sendVerificationEmail } from "../helpers/sendVerificationEmail.js";
+import { sendVerificationEmail } from '../helpers/sendVerificationEmail.js';
 
 
 export const createUser = async (req, res) => {
@@ -143,5 +144,21 @@ export const checkUsernameUnique = async (req, res) => {
   catch (error) {
     console.error("Error checking username uniqueness: ", error);
     res.status(500).json({ success: false, message: 'Internal server error while checking username uniqueness' });
+  }
+};
+
+
+
+
+export const handleSendEmail = async (req, res) => {
+  console.log("req from user contrller:",req.body)
+  const { email, html } = req.body;
+
+  try {
+    await sendVerificationEmail(email, html);
+    res.status(200).json({ message: '✅ Email sent successfully' });
+  } catch (error) {
+    console.error('❌ Email failed:', error);
+    res.status(500).json({ error: 'Failed to send email' });
   }
 };
