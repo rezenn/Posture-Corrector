@@ -123,7 +123,9 @@ export default function OtpForm() {
                           onChange={(e) => handleChange(e.target.value, i)}
                           onKeyDown={(e) => handleKeyDown(e, i)}
                           onPaste={(e) => handlePaste(e, i)}
-                          ref={(el) => (inputRefs.current[i] = el)}
+                          ref={(el: HTMLInputElement | null) => {
+                            inputRefs.current[i] = el
+                          }}
                           disabled={isSubmitting}
                         />
                       </FormControl>
