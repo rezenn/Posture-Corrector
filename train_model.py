@@ -19,4 +19,4 @@ print("Accuracy:", accuracy_score(y_test, y_pred))
 print(classification_report(y_test, y_pred))
 
 joblib.dump(clf, "posture_model.pkl")
-print("✅ Model saved as posture_model.pkl")
+print(" Model saved as posture_model.pkl")

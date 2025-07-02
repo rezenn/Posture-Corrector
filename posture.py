@@ -564,8 +564,8 @@ class PostureApp:
         pdf.cell(0, 10, "Session Breakdown (Every 10 Seconds)", ln=1)
 
         # Column headers
-        headers = ["Time(s)", "Good(s)", "Poor(s)", "Corrections", "Changes", "Posture", "Good %"]
-        col_widths = [25, 25, 25, 30, 30, 30, 25]
+        headers = ["Time(s)", "Good(s)", "Poor(s)", "Corrections", "Changes", "Good Posture %"]
+        col_widths = [25, 25, 25, 30, 30, 35]
 
         pdf.set_font("Arial", "B", 10)
         for i, h in enumerate(headers):
@@ -580,8 +580,7 @@ class PostureApp:
             pdf.cell(col_widths[2], 8, str(seg["Poor Time"]), border=1, align="C")
             pdf.cell(col_widths[3], 8, str(seg["Corrections"]), border=1, align="C")
             pdf.cell(col_widths[4], 8, str(seg["Changes"]), border=1, align="C")
-            pdf.cell(col_widths[5], 8, seg["Posture"], border=1, align="C")
-            pdf.cell(col_widths[6], 8, f"{seg['Good %']}%", border=1, align="C")
+            pdf.cell(col_widths[5], 8, f"{seg['Good %']}%", border=1, align="C")
             pdf.ln()
 
         out = f"posture_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
