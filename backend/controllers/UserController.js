@@ -20,6 +20,7 @@ export const createUser = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    let newUser;
 
     const existingUserVerifiedByEmail = await User.findOne({ email });
     if (existingUserVerifiedByEmail) {
@@ -60,7 +61,7 @@ export const createUser = async (req, res) => {
       const expiryDate = new Date()
       expiryDate.setMinutes(expiryDate.getMinutes() + 10);
 
-      const newUser = await User({
+      newUser = await User({
         fullName,
         username,
         email,
@@ -73,13 +74,14 @@ export const createUser = async (req, res) => {
       });
       await newUser.save();
 
-      // Generate Token
-      const token = jwt.sign(
-        { id: newUser.id, email: newUser.email, role: "user" },
-        process.env.JWT_SECRET,
-        { expiresIn: `${process.env.JWT_SIGNUP_EXPIRES_IN}` }
-      );
     }
+
+    // Generate Token
+    const token = jwt.sign(
+      { _id: newUser._id, email: newUser.email },
+      process.env.JWT_SECRET,
+      { expiresIn: `${process.env.JWT_SIGNUP_EXPIRES_IN}` }
+    );
 
     // send verfication email
     // const emailResponse = await sendVerificationEmail(fullName, email, otp);

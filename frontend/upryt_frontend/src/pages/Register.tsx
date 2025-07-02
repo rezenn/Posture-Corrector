@@ -19,10 +19,12 @@ import UprytLogo from '../assets/uprytwhite.png'; // Keep image path unchanged
 import { signUpSchema } from "../schemas/auth/signUpSchema";
 import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { validateUsernameUnique } from "../apis/Api";
+import { registerUser, validateUsernameUnique } from "../apis/Api";
 import type { AxiosError } from "axios";
 import type { ApiResponse } from "../types/ApiResponse";
 import { Loader2 } from 'lucide-react';
+import { FaEye, FaEyeSlash } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 
 export default function Register() {
@@ -32,11 +34,14 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const debounced = useDebounceCallback(setUsername, 300);
+  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       fullName: "",
+      username: "",
+      contact: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -71,10 +76,37 @@ export default function Register() {
     checkUsernameUnique();
   }, [username]);
 
-  function onSubmit(values: z.infer<typeof signUpSchema>) {
-    console.log("Submitting...")
-    console.log("Registration Data:", values)
-    toast.success("Registered successfully!")
+  // function onSubmit(values: z.infer<typeof signUpSchema>) {
+  //   console.log("Submitting...")
+  //   console.log("Registration Data:", values)
+  //   toast.success("Registered successfully!")
+  // }
+
+  const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
+    setIsSubmitting(true);
+
+    try {
+      const response = await registerUser(data);
+
+      toast.success('Success', {
+        description: response.data.message
+      });
+
+      navigate(`/verify/${username}`);
+      // router.replace(`/verify/${username}`);
+    }
+    catch (error) {
+      console.error("Error in sign up of user", error);
+      const axiosError = error as AxiosError<ApiResponse>;
+
+      let errorMessage = axiosError.response?.data.message;
+      toast.error('Sign Up failed', {
+        description: errorMessage
+      });
+    }
+    finally {
+      setIsSubmitting(false);
+    }
   }
 
 
@@ -84,7 +116,7 @@ export default function Register() {
       <WidthWrapper>
         <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
           <div className="flex justify-center w-full">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex h-[600px] overflow-hidden">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex overflow-hidden">
 
               {/* Left: Register Form */}
               <div className="w-1/2 p-8 flex flex-col justify-center">
@@ -103,7 +135,7 @@ export default function Register() {
                         <FormItem>
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="John Doe" {...field} />
+                            <Input placeholder="Full Name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -132,7 +164,20 @@ export default function Register() {
                         </FormItem>
                       )}
                     />
-
+                    <FormField
+                      name="contact"
+                      control={form.control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contact</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Contact" {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="email"
@@ -153,9 +198,19 @@ export default function Register() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Enter password" {...field} />
-                          </FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input type={showPassword ? "text" : "password"} placeholder="Enter password" {...field} />
+                            </FormControl>
+                            <button
+                              type="button"
+                              onClick={togglePasswordVisibility}
+                              className="cursor-pointer absolute inset-y-0 end-2.5 z-20 text-gray-400  focus:outline-hidden focus:text-blue-600 dark:text-neutral-600 dark:focus:text-blue-500"
+                            >
+                              {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
+                            </button>
+                          </div>
+
                           <FormMessage />
                         </FormItem>
                       )}
@@ -167,16 +222,33 @@ export default function Register() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Confirm password" {...field} />
-                          </FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" {...field} />
+                            </FormControl>
+                            <button
+                              type="button"
+                              onClick={toggleConfirmPasswordVisibility}
+                              className="cursor-pointer absolute inset-y-0 end-2.5 z-20 text-gray-400  focus:outline-hidden focus:text-blue-600 dark:text-neutral-600 dark:focus:text-blue-500"
+                            >
+                              {showConfirmPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
+                            </button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <Button type="submit" className="w-full bg-blue-950">
-                      Register
+                    <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-950">
+                      {/* Register */}
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Please wait
+                        </>
+                      ) : (
+                        "Register"
+                      )}
                     </Button>
                   </form>
                 </Form>
@@ -196,7 +268,7 @@ export default function Register() {
 
                 <p className="text-sm text-center mt-6 text-gray-500">
                   Already have an account?{" "}
-                  <a href="/login" className="text-blue-600 hover:underline">Sign in</a>
+                  <a href="/login" className="text-blue-950 hover:underline">Login</a>
                 </p>
               </div>
 

@@ -1,9 +1,10 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Register from './pages/Register.tsx';
-import Homepage from './pages/Homepage.tsx';
-import Login from './pages/Login.tsx';
-import ForgotPassword from './pages/forgotpassword.tsx';
+"use client"
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Register from './pages/Register.tsx'
+import Homepage from './pages/Homepage.tsx'
+import Login from './pages/Login.tsx'
+import ForgotPassword from './pages/forgotpassword.tsx'
 
 
 const App = () => {

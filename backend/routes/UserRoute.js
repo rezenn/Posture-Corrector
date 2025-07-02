@@ -1,4 +1,5 @@
 import express from 'express';
+import { authGuard } from "../middlewares/authGuard.js";
 import { createUser, loginUser, checkUsernameUnique } from '../controllers/UserController.js';
 // import { body } from 'express-validator';
 
