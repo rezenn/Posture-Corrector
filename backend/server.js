@@ -8,7 +8,6 @@ import connectDB from './db/db.js';
 import  UserRoute from './routes/UserRoute.js'
 const app = express();
 const PORT = process.env.PORT || 3000;
-import { generateOTP } from './utils/generateOTP.js';
 
 app.use(cors());
 app.use(express.json()); // ✅ this one is very important

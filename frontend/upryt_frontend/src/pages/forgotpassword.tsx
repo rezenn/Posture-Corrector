@@ -9,7 +9,7 @@ import { Input } from "../components/ui/input"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../components/ui/form"
 import WidthWrapper from "../components/WidthWrapper"
 import UprytLogo from '../assets/uprytwhite.png'
-
+import { sendForgotPasswordEmail } from "../api/auth"
 
 const forgotSchema = z.object({
   email: z.string().email({ message: "Enter a valid email address" }),
@@ -22,11 +22,21 @@ export default function ForgotPassword() {
       email: "",
     },
   })
+  const onSubmit = async (values: z.infer<typeof forgotSchema>) => {
+    try {
+      const res = await sendForgotPasswordEmail(values.email);
+      console.log("sent ", res.data.message);
+      // navigate("/verify-otp", { state: { email: values.email } });
+    } catch (err: any) {
+      console.error("error", err.response?.data?.message || "Error sending reset email");
+      alert("Error: " + (err.response?.data?.message || "Something went wrong"));
+    }
+  };
 
-  function onSubmit(values: z.infer<typeof forgotSchema>) {
-    console.log("Reset Request Sent To:", values.email)
-    // Handle password reset request logic here
-  }
+
+
+
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">

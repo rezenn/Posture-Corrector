@@ -1,6 +1,6 @@
-// backend/helpers/sendPasswordResetOTP.js
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 export const sendPasswordResetOTP = async (fullName, email, otp) => {
@@ -13,12 +13,17 @@ export const sendPasswordResetOTP = async (fullName, email, otp) => {
       },
     });
 
-    const html = `
-      <h3>Hello ${fullName},</h3>
-      <p>Your password reset OTP is:</p>
-      <h2>${otp}</h2>
-      <p>This code will expire in 10 minutes.</p>
+        const html = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+        <h2>Hello ${fullName},</h2>
+        <p>You have requested to reset your password for your UPRYT account.</p>
+        <p><strong>Your OTP:</strong> <span style="font-size: 24px; color: #0d47a1;">${otp}</span></p>
+        <p>This code is valid for 10 minutes.</p>
+        <p>If you didn’t request this, you can ignore this email.</p>
+        <p>– The UPRYT Team</p>
+      </div>
     `;
+
 
     await transporter.sendMail({
       from: `"UPRYT" <${process.env.GMAIL_USER}>`,
@@ -29,7 +34,7 @@ export const sendPasswordResetOTP = async (fullName, email, otp) => {
 
     return { success: true };
   } catch (error) {
-    console.error('❌ Password reset email failed:', error);
+    console.error('❌ Failed to send password reset email:', error);
     return { success: false, message: 'Email sending failed' };
   }
 };
