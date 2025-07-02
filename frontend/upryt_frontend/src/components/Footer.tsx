@@ -1,4 +1,5 @@
 import { Facebook, Instagram, Twitter } from 'lucide-react';
+import UprytLogo from '../assets/uprytblue.png';
 
 const Footer = () => {
   return (
@@ -7,7 +8,7 @@ const Footer = () => {
   
   {/* Branding block spans 2 columns on medium screens and above */}
   <div className="md:col-span-2 flex flex-col items-start space-y-2">
-    <div className="text-lg font-semibold">Upryt.</div>
+    <div className="text-lg font-semibold"><img src={UprytLogo} alt="" className="w-20 h-auto"/></div>
     <div className="text-sm text-gray-500">Align your posture. Elevate your life.</div>
     <div className="flex space-x-4 mt-2">
       <Facebook className="w-5 h-5 cursor-pointer text-gray-500 hover:text-blue-700" />
@@ -48,7 +49,7 @@ const Footer = () => {
 </div>
 
 
-      <div className="border-t border-blue-500 pt-4 pb-6 text-center text-xs text-gray-500">
+      <div className="border-t border-gray-200 pt-4 pb-6 text-center text-xs text-gray-500">
         <div>Upryt Technologies Pvt. Ltd.  
         Kathmandu, Nepal</div>
         <div className="mt-1">© 2025 Upryt. All rights reserved.</div>

@@ -10,7 +10,6 @@ import { Input } from "../components/ui/input"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../components/ui/form"
 import WidthWrapper from "../components/WidthWrapper"
 import { FcGoogle } from "react-icons/fc"
-import { FaApple } from "react-icons/fa"
 import UprytLogo from '../assets/uprytwhite.png'; 
 
 
@@ -38,7 +37,7 @@ export default function Login() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <WidthWrapper>
         <div className="flex justify-center w-full">
-        <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex h-[550px] overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex h-[600px] overflow-hidden">
           {/* Left side: Login Form */}
           <div className="w-1/2 p-8 flex flex-col justify-center">
             <h2 className="text-2xl font-bold mb-2 text-gray-800">Welcome Back!</h2>
@@ -93,10 +92,6 @@ export default function Login() {
               <Button variant="outline" className="w-full flex items-center gap-2">
                 <FcGoogle className="text-xl" />
                 Continue with Google
-              </Button>
-              <Button variant="outline" className="w-full flex items-center gap-2">
-                <FaApple className="text-xl" />
-                Continue with Apple
               </Button>
             </div>
 
