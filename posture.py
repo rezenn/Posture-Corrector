@@ -183,6 +183,10 @@ class PostureApp:
         )
         self.stats_frame.pack(fill=BOTH, expand=YES, pady=(0, 10))
 
+        self.segment_duration = 10
+        self.last_segment_time = None
+        self.session_segments = []  # Will hold dictionaries with detailed stats
+
         # Statistics variables
         self.stats_vars = {
             "Session Time": ttk.StringVar(value="0s"),
@@ -248,6 +252,8 @@ class PostureApp:
         self.posture_change_count = 0
         self.max_good_streak = 0
         self.max_poor_streak = 0
+        self.segment_good_time = 0
+        self.segment_poor_time = 0
         self.current_streak_start = None
         self.current_streak_type = None
 
@@ -279,10 +285,12 @@ class PostureApp:
 
         # Start session timer when first frame arrives
         if not self.session_active:
+            now = time.time()
             self.session_active = True
-            self.start_time = time.time()
-            self.posture_change_time = self.start_time
-            self.current_streak_start = self.start_time
+            self.start_time = now
+            self.last_segment_time = now 
+            self.posture_change_time = now
+            self.current_streak_start = now
 
         frame = cv2.flip(frame, 1)
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -422,8 +430,10 @@ class PostureApp:
         # Update posture times
         if posture_status == "Good Posture":
             self.good_posture_time += time_delta
+            self.segment_good_time += time_delta
         else:
             self.bad_posture_time += time_delta
+            self.segment_poor_time += time_delta
 
         # Handle posture changes and streaks
         if posture_status != self.last_posture:
@@ -475,6 +485,22 @@ class PostureApp:
             self.progress['value'] = good_percentage
             self.progress.configure(
                 bootstyle=SUCCESS if good_percentage > 50 else DANGER)
+            
+            # Check if new segment needs to be recorded
+            while now - self.last_segment_time >= self.segment_duration:
+                segment_data = {
+                    "Time": int(self.last_segment_time - self.start_time + self.segment_duration),
+                    "Good Time": int(self.segment_good_time),
+                    "Poor Time": int(self.segment_poor_time),
+                    "Corrections": self.correction_count,
+                    "Changes": self.posture_change_count,
+                    "Posture": self.last_posture,
+                    "Good %": int((self.segment_good_time / self.segment_duration) * 100)
+                }
+                self.session_segments.append(segment_data)
+                self.segment_good_time = 0
+                self.segment_poor_time = 0
+                self.last_segment_time += self.segment_duration
 
         self.root.after(100, self.update_video)
 
@@ -487,6 +513,10 @@ class PostureApp:
         filename = f"posture_stats_{now}.csv"
         with open(filename, mode="w", newline='') as file:
             writer = csv.writer(file)
+            writer.writerow(["Time (s)", "Good Time (s)", "Poor Time (s)", "Corrections", "Changes", "Posture", "Good %"])
+            for seg in self.session_segments:
+                writer.writerow([seg["Time"], seg["Good Time"], seg["Poor Time"],
+                                seg["Corrections"], seg["Changes"], seg["Posture"], seg["Good %"]])
             writer.writerow(["Metric", "Value"])
             writer.writerow(
                 ["Session Time (s)", int(time.time() - self.start_time)])
@@ -509,8 +539,8 @@ class PostureApp:
         pdf.cell(0, 10, "Upryt", ln=1, align="C")
         pdf.cell(0, 10, "Posture Session Report", ln=2, align="C")
         pdf.ln(5)
-        pdf.set_font("Arial", size=15)
 
+        pdf.set_font("Arial", size=15)
         data = [
             ("Generated:", now_text),
             ("Session Time", f"{int(time.time() - self.start_time)}s"),
@@ -527,6 +557,32 @@ class PostureApp:
         for name, val in data:
             pdf.cell(60, 8, name, border=1)
             pdf.cell(80, 8, val, border=1, ln=1)
+            
+        pdf.ln(10)
+        # Detailed session data header
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 10, "Session Breakdown (Every 10 Seconds)", ln=1)
+
+        # Column headers
+        headers = ["Time(s)", "Good(s)", "Poor(s)", "Corrections", "Changes", "Posture", "Good %"]
+        col_widths = [25, 25, 25, 30, 30, 30, 25]
+
+        pdf.set_font("Arial", "B", 10)
+        for i, h in enumerate(headers):
+            pdf.cell(col_widths[i], 8, h, border=1, align="C")
+        pdf.ln()
+
+        # Segment data rows
+        pdf.set_font("Arial", size=10)
+        for seg in self.session_segments:
+            pdf.cell(col_widths[0], 8, str(seg["Time"]), border=1, align="C")
+            pdf.cell(col_widths[1], 8, str(seg["Good Time"]), border=1, align="C")
+            pdf.cell(col_widths[2], 8, str(seg["Poor Time"]), border=1, align="C")
+            pdf.cell(col_widths[3], 8, str(seg["Corrections"]), border=1, align="C")
+            pdf.cell(col_widths[4], 8, str(seg["Changes"]), border=1, align="C")
+            pdf.cell(col_widths[5], 8, seg["Posture"], border=1, align="C")
+            pdf.cell(col_widths[6], 8, f"{seg['Good %']}%", border=1, align="C")
+            pdf.ln()
 
         out = f"posture_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         pdf.output(out)
