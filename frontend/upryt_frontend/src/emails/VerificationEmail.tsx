@@ -1,6 +1,11 @@
-import { Html, Head, Font, Preview, Heading, Row, Section, Text, Button } from '@react-email/components';
+import { Html, Head, Font, Preview, Heading, Row, Section, Text } from '@react-email/components';
 
-export default function VerificationEmail({ fullName, email, otp }) {
+type Props = {
+    fullName: string;
+    otp: string;
+};
+
+export default function VerificationEmail({ fullName, otp }: Props) {
     return (
         <Html lang="en" dir="ltr">
             <Head>
@@ -48,4 +53,3 @@ export default function VerificationEmail({ fullName, email, otp }) {
         </Html>
     );
 }
-

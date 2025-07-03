@@ -3,7 +3,8 @@ import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
-// import { sendVerificationEmail } from "../helpers/sendVerificationEmail.jsx";
+import { sendVerificationEmail } from '../helpers/sendVerificationEmail.js';
+import { sendResetPasswordVerificationEmail } from '../helpers/sendResetPasswordVerificationEmail.js';
 
 // Create a new user
 export const createUser = async (req, res) => {
@@ -84,7 +85,7 @@ export const createUser = async (req, res) => {
     );
 
     // send verfication email
-    // const emailResponse = await sendVerificationEmail(fullName, email, otp);
+    const emailResponse = await sendVerificationEmail(email, otp);
 
     // if (!emailResponse.success) {
     //   return Response.json(
@@ -105,6 +106,7 @@ export const createUser = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error signing up the user' });
   }
 };
+
 
 export const verifyOTPForRegistration = async (req, res) => {
   const { email, otp } = req.body;
@@ -166,25 +168,24 @@ export const verifyOTPForRegistration = async (req, res) => {
 
 // Login user with username or email
 export const loginUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { identifier, password } = req.body;
 
   try {
     let checkExistingUser;
-    if (username) {
-      checkExistingUser = await User.findOne({ username });
-      if (!checkExistingUser) {
-        return res.status(400).json({ error: 'Invalid username or password' });
-      }
+    if (identifier) {
+      checkExistingUser = await User.findOne({
+        $or: [
+          { username: identifier },
+          { email: identifier }
+        ]
+      });
     }
 
-    if (email) {
-      checkExistingUser = await User.findOne({ email });
-      if (!checkExistingUser) {
-        return res.status(400).json({ error: 'Invalid email or password' });
-      }
+    if (!checkExistingUser) {
+      return res.status(400).json({ message: "Invalid username/email or password" });
     }
 
-    const isMatch = await bcrypt.compare(password, checkExistingUser.password);
+    const isMatch = bcrypt.compare(password, checkExistingUser.password);
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid password' });
     }
@@ -274,7 +275,8 @@ export const forgotPassword = async (req, res) => {
       verifyEmailResetPasswordExpiryDate: expiryDate
     });
 
-    // const emailResponse = await sendResetPasswordVerificationEmail(user?.fullName, email, otp);
+
+    const emailResponse = await sendResetPasswordVerificationEmail(checkExistingUser.fullName, email, otp);
 
     // if (!emailResponse.success) {
     //   return res.status(200).json(
@@ -371,5 +373,49 @@ export const resetPassword = async (req, res) => {
   catch (error) {
     console.log("Error while resetting password", error);
     return res.status(500).json({ error: "Internal server error!" });
+  }
+};
+
+export const handleSendEmail = async (req, res) => {
+  console.log("req from user contrller:", req.body)
+  const { email, html } = req.body;
+
+  try {
+    await sendVerificationEmail(email, html);
+    res.status(200).json({ message: '✅ Email sent successfully' });
+  } catch (error) {
+    console.error('❌ Email failed:', error);
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+};
+
+
+export const findUserByUsername = async (req, res) => {
+  try {
+    const username = req.query.username;
+
+    if (!username) {
+      return res.status(400).json({ success: false, message: "Username is required" });
+    }
+
+    const user = await User.findOne({ username: username, isVerified: true }); // case-insensitive match
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        username: user.username,
+        isVerified: user.isVerified
+      }
+    });
+  } catch (error) {
+    console.error("Error finding user by username:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

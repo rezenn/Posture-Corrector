@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-
 const userSchema = new mongoose.Schema({
   fullName: {
     type: String,
@@ -10,79 +9,72 @@ const userSchema = new mongoose.Schema({
   },
   contact: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true, // allows null for some users
     trim: true,
-    minLength: [10, 'Contact must be at least 10 characters long'],
-    maxLength: [10, 'Contact must not be longer than 10 characters']
+    minLength: 10,
+    maxLength: 10,
   },
   username: {
     type: String,
-    required: [true, 'Username is required'],
     unique: true,
-    RegExp: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'],
+    sparse: true,
+    match: [/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'],
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: true,
     unique: true,
-    trim: true,
     lowercase: true,
-    minLength: [6, 'Email must be at least 6 characters long'],
-    maxLength: [50, 'Email must not be longer than 50 characters'],
-    RegExp: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Invalid email format']
+    trim: true,
+    match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Invalid email format'],
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
-    minLength: [8, 'Password must be at least 8 characters long'],
+    minLength: 8,
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true,
   },
   profilePictureUrl: {
     type: String,
-    required: false
   },
   isVerified: {
     type: Boolean,
-    default: false
+    default: false,
   },
-  verifyCode: {
-    type: String,
-    required: false
-  },
-  verifyCodeExpiryDate: {
-    type: Date,
-    required: false
-  },
-  verifyEmailResetPassword: {
-    type: String,
-    required: false
-  },
-  verifyEmailResetPasswordExpiryDate: {
-    type: Date,
-    required: false
-  }
-},
-  {
-    timestamps: true
-  });
+  verifyCode: String,
+  verifyCodeExpiryDate: Date,
+  verifyEmailResetPassword: String,
+  verifyEmailResetPasswordExpiryDate: Date,
+}, {
+  timestamps: true,
+});
 
+// Hash password if modified
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
+  if (this.password) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
   next();
 });
 
+// Compare password
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// JWT generator
 userSchema.methods.generateJWT = function () {
   return jwt.sign(
-    { email: this.email },
+    { id: this._id, email: this.email },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
-}
+};
 
 const User = mongoose.model('users', userSchema);
 export default User;

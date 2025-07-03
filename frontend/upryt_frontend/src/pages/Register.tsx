@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
+import { useGoogleLogin } from '@react-oauth/google';
+import { loginWithGoogle } from '../api/auth';
 import {
   Form,
   FormControl,
@@ -19,7 +21,7 @@ import UprytLogo from '../assets/uprytwhite.png'; // Keep image path unchanged
 import { signUpSchema } from "../schemas/auth/signUpSchema";
 import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { registerUser, validateUsernameUnique } from "../apis/Api";
+import { registerUser, validateUsernameUnique } from "../api/Api";
 import type { AxiosError } from "axios";
 import type { ApiResponse } from "../types/ApiResponse";
 import { Loader2 } from 'lucide-react';
@@ -109,7 +111,13 @@ export default function Register() {
     }
   }
 
-
+  const signUpWithGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      const data = await loginWithGoogle(tokenResponse.access_token);
+      console.log("✅ Logged in with Google:", data);
+    },
+    onError: () => console.log("❌ Google login failed"),
+  });
 
   return (
     <>
@@ -260,7 +268,7 @@ export default function Register() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <Button variant="outline" className="w-full flex items-center gap-2">
+                  <Button onClick={() => signUpWithGoogle()} variant="outline" className="w-full flex items-center gap-2">
                     <FcGoogle className="text-xl" />
                     Sign up with Google
                   </Button>

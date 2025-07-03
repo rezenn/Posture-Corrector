@@ -1,17 +1,16 @@
-import ResetPasswordEmail from "../../emails/ResetPasswordEmail";
 import nodemailer from "nodemailer";
-import { render } from '@react-email/components';
 
 export const sendResetPasswordVerificationEmail = async (
-    fullName,
     email,
-    otp
+    html
 ) => {
-    try {
-        const html = await render(
-            <ResetPasswordEmail fullName={fullName} email={email} otp={otp} />
-        );
+    if (!email || !html) {
+        return res
+            .status(400)
+            .json({ error: "Missing email or html content" });
+    }
 
+    try {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
