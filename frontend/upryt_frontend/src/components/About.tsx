@@ -1,5 +1,5 @@
 import React from "react";
-import UprytImage from "../assets/pos.png"; // Replace with your image
+import UprytImage from "../assets/compareposture.png"; // Replace with your image
 
 const About = () => {
   return (
