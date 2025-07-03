@@ -117,7 +117,7 @@ export default function Login() {
             </p>
             <p className="text-white text-sm">
               UPRYT helps you correct your sitting posture in real-time using AI.
-              Say goodbye to slouching and hello to better health—effortlessly.
+              Say goodbye to slouching and hello to better posture—effortlessly.
             </p>
           </motion.div>
         </div>
