@@ -33,10 +33,10 @@ const Navbar = () => {
           className={`transition-all duration-300 ${scrolled ? "h-8" : "h-10"}`}
         />
         <div className="hidden md:flex space-x-8 text-l font-medium text-blue-950 ml-6">
-          <a href="#home" className="hover:text-blue-300 transition-colors">Home</a>
+          <a href="#herosection" className="hover:text-blue-300 transition-colors">Home</a>
           <a href="#about" className="hover:text-blue-300 transition-colors">About</a>
           <a href="#features" className="hover:text-blue-300 transition-colors">Features</a>
-          <a href="#services" className="hover:text-blue-300 transition-colors">Services</a>
+          <a href="#services" className="hover:text-blue-300 transition-colors">Pricing</a>
         </div>      </div>
     </nav>
     </header>

@@ -7,7 +7,7 @@ import GoodPosture3 from '../assets/Goodposturespine.png'
 
 const images = [GoodPosture1, GoodPosture2, GoodPosture3]
 
-const Homepage = () => {
+const HeroSection = () => {
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(1)
   const [firstRender, setFirstRender] = useState(true)
@@ -42,7 +42,7 @@ const Homepage = () => {
   return (
     <>
       <Navbar />
-      <main className="h-screen w-full flex">
+      <main id="herosection" className="h-screen w-full flex">
         {/* Left Half - Text */}
         <section className="w-1/2 flex items-center justify-center px-10 pt-10 relative z-10 bg-white">
           <motion.div
@@ -86,4 +86,4 @@ const Homepage = () => {
   )
 }
 
-export default Homepage
+export default HeroSection

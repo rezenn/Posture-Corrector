@@ -8,6 +8,8 @@ import OtpForm from './pages/otpform.tsx'
 import MainLayout from './components/MainLayout.tsx'
 import { FeaturesSection } from './components/Feature.tsx'
 import { Toaster } from 'sonner'
+import About from './components/About.tsx'
+import HeroSection from './components/HeroSection.tsx'
 
 
 const App = () => {
@@ -22,6 +24,9 @@ const App = () => {
             <Route path="/forgotpassword" element={<ForgotPassword />} />
             <Route path="/otpform" element={<OtpForm />} />
             <Route path="/features" element={<FeaturesSection />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/herosection" element={<HeroSection />} />
+
             
           </Route>
 
