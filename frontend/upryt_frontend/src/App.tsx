@@ -6,7 +6,9 @@ import Login from './pages/Login.tsx'
 import ForgotPassword from './pages/forgotpassword.tsx'
 import OtpForm from './pages/otpform.tsx'
 import MainLayout from './components/MainLayout.tsx'
+import { FeaturesSection } from './components/Feature.tsx'
 import { Toaster } from 'sonner'
+
 
 const App = () => {
   return (
@@ -19,6 +21,8 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/forgotpassword" element={<ForgotPassword />} />
             <Route path="/otpform" element={<OtpForm />} />
+            <Route path="/features" element={<FeaturesSection />} />
+            
           </Route>
 
 
