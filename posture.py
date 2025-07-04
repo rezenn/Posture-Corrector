@@ -14,6 +14,7 @@ import pygame
 import csv
 from datetime import datetime
 from fpdf import FPDF
+import matplotlib.pyplot as plt
 
 # Load AI model
 model_loaded = False
@@ -508,6 +509,48 @@ class PostureApp:
         self.cap.release()
         self.root.destroy()
 
+    def generate_posture_charts(self):
+        times = [seg["Time"] for seg in self.session_segments]
+        good = [seg["Good Time"] for seg in self.session_segments]
+        poor = [seg["Poor Time"] for seg in self.session_segments]
+        good_percent = [seg["Good %"] for seg in self.session_segments]
+
+        # Time Series Line Chart (Good % Over Time)
+        plt.figure(figsize=(10, 5))
+        plt.plot(times, good_percent, marker='o', color='seagreen', linewidth=2, label='Good Posture %')
+        plt.title("Posture Trend Over Time")
+        plt.xlabel("Time")
+        plt.ylabel("Good Posture %")
+        plt.ylim(0,100)
+        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("posture_trend_over_time.png")
+        plt.close()
+
+        # Bar Chart (% Good Posture per Segment)
+        plt.figure(figsize=(8, 4))
+        plt.bar(times, good, width=1, label='Good', color='green')
+        plt.bar(times, poor, bottom=good, width=1, label='Poor', color='red')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Time in Segment (s)')
+        plt.title('Good vs Poor Posture Time per Segment')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("bar_chart.png")
+        plt.close()
+
+         # Pie chart: Total Good vs Poor posture
+        total_good = sum(good)
+        total_poor = sum(poor)
+        plt.figure(figsize=(5, 5))
+        plt.pie([total_good, total_poor], labels=["Good", "Poor"],
+                autopct='%1.1f%%', colors=["lightgreen", "salmon"])
+        plt.title("Total Posture Distribution")
+        plt.tight_layout()
+        plt.savefig("pie_chart.png")
+        plt.close()
+
     def export_stats(self):
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         filename = f"posture_stats_{now}.csv"
@@ -532,7 +575,10 @@ class PostureApp:
                          "सत्रको तथ्यांक सफलतापूर्वक निर्यात गरियो।")
 
     def export_pdf(self):
-        now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now()
+        now_text = now.strftime("%Y-%m-%d %H:%M:%S")
+        out = f"posture_report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"  # <-- define filename
+
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 16)
@@ -558,33 +604,29 @@ class PostureApp:
             pdf.cell(60, 8, name, border=1)
             pdf.cell(80, 8, val, border=1, ln=1)
             
+        # Generate charts
+        self.generate_posture_charts()
+
+        # Add charts to PDF
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "Visual Posture Analytics", ln=1, align="C")
+
+        pdf.image("posture_trend_over_time.png", x=10, y=None, w=180)
         pdf.ln(10)
-        # Detailed session data header
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10, "Session Breakdown (Every 10 Seconds)", ln=1)
+        pdf.image("bar_chart.png", x=50, y=None, w=100)
+        pdf.ln(10)
+        pdf.image("pie_chart.png", x=50, y=None, w=100)
 
-        # Column headers
-        headers = ["Time(s)", "Good(s)", "Poor(s)", "Corrections", "Changes", "Good Posture %"]
-        col_widths = [25, 25, 25, 30, 30, 35]
-
-        pdf.set_font("Arial", "B", 10)
-        for i, h in enumerate(headers):
-            pdf.cell(col_widths[i], 8, h, border=1, align="C")
-        pdf.ln()
-
-        # Segment data rows
-        pdf.set_font("Arial", size=10)
-        for seg in self.session_segments:
-            pdf.cell(col_widths[0], 8, str(seg["Time"]), border=1, align="C")
-            pdf.cell(col_widths[1], 8, str(seg["Good Time"]), border=1, align="C")
-            pdf.cell(col_widths[2], 8, str(seg["Poor Time"]), border=1, align="C")
-            pdf.cell(col_widths[3], 8, str(seg["Corrections"]), border=1, align="C")
-            pdf.cell(col_widths[4], 8, str(seg["Changes"]), border=1, align="C")
-            pdf.cell(col_widths[5], 8, f"{seg['Good %']}%", border=1, align="C")
-            pdf.ln()
-
-        out = f"posture_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         pdf.output(out)
+
+        for chart in ["posture_trend_over_time.png", 
+                      "bar_chart.png", 
+                      "pie_chart.png"
+                    ]:
+            if os.path.exists(chart):
+                os.remove(chart)
+
         self.speak_alert("PDF exported successfully.",
                          "पीडीएफ सफलतापूर्वक निर्यात भयो।")
 

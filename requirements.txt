@@ -6,3 +6,4 @@ scikit-learn
 joblib
 pyttsx3
 Pillow
+matplotlib
