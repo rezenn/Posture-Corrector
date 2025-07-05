@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from "framer-motion"
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import GoodPosture1 from '../assets/goodposture.png'
 import GoodPosture2 from '../assets/Uprytmission.png'
@@ -11,6 +12,7 @@ const HeroSection = () => {
   const [index, setIndex] = useState(0)
   const [direction, setDirection] = useState(1)
   const [firstRender, setFirstRender] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -59,9 +61,11 @@ const HeroSection = () => {
               Start correcting your sitting habits with real-time AI monitoring.
             </p>
             <div className="flex space-x-10 mt-4">
-              <button className="bg-blue-950 text-white hover:bg-blue-300 px-9 py-2 rounded-md text-l shadow">
+              <button
+              onClick={() => navigate('/login')}
+              className="bg-blue-950 text-white hover:bg-blue-300 px-9 py-2 rounded-md text-l shadow">
                 Get Started
-              </button>
+                </button>
             </div>
           </motion.div>
         </section>

@@ -12,8 +12,6 @@ import WidthWrapper from "../components/WidthWrapper"
 import { FcGoogle } from "react-icons/fc"
 import UprytLogo from '../assets/uprytwhite.png'; 
 
-
-
 const loginSchema = z.object({
   email: z.string().email({ message: "Enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
@@ -34,94 +32,94 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-white">
       <WidthWrapper>
-        <div className="flex justify-center w-full">
-        <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex h-[600px] overflow-hidden">
+        <div className="flex w-full h-screen">
           {/* Left side: Login Form */}
-          <div className="w-1/2 p-8 flex flex-col justify-center">
-            <h2 className="text-2xl font-bold mb-2 text-gray-800">Welcome Back!</h2>
-            <p className="text-sm text-gray-500 mb-6">Login to your UPRYT account</p>
+          <div className="w-full md:w-1/2 h-full p-8 flex flex-col justify-center">
+            <div className="max-w-md mx-auto w-full">
+              <h2 className="text-2xl font-bold mb-2 text-gray-800">Welcome Back!</h2>
+              <p className="text-sm text-gray-500 mb-6">Login to your UPRYT account</p>
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="example@email.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="example@email.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Enter your password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Enter your password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="text-sm text-right">
-                  <Link to="/forgotpassword" className="text-blue-950 hover:underline">Forgot Password?</Link>
-                </div>
+                  <div className="text-sm text-right">
+                    <Link to="/forgotpassword" className="text-blue-950 hover:underline">Forgot Password?</Link>
+                  </div>
 
-                <Button type="submit" className="w-full bg-blue-950">
-                  Login
+                  <Button type="submit" className="w-full bg-blue-950">
+                    Login
+                  </Button>
+                </form>
+              </Form>
+              <div className="my-4 flex items-center justify-between">
+                <hr className="w-full border-gray-300" />
+                <span className="px-2 text-gray-400 text-sm">OR</span>
+                <hr className="w-full border-gray-300" />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button variant="outline" className="w-full flex items-center gap-2">
+                  <FcGoogle className="text-xl" />
+                  Continue with Google
                 </Button>
-              </form>
-            </Form>
-            <div className="my-4 flex items-center justify-between">
-              <hr className="w-full border-gray-300" />
-              <span className="px-2 text-gray-400 text-sm">OR</span>
-              <hr className="w-full border-gray-300" />
+              </div>
+              <p className="text-sm text-center mt-6 text-gray-500">
+                Don't have an account? <Link to="/register" className="text-blue-950 hover:underline">Sign up</Link>
+              </p>
             </div>
-
-            <div className="flex flex-col gap-3">
-              <Button variant="outline" className="w-full flex items-center gap-2">
-                <FcGoogle className="text-xl" />
-                Continue with Google
-              </Button>
-            </div>
-            <p className="text-sm text-center mt-6 text-gray-500">
-              Don't have an account? <Link to="/register" className="text-blue-950 hover:underline">Sign up</Link>
-            </p>
           </div>
 
           {/* Right side: Info/Branding */}
-        <div className="w-1/2 bg-blue-950 hidden md:flex items-center justify-center p-8">
-          <motion.div
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 2, ease: "easeOut"}}
-            className="flex flex-col items-center justify-center text-center space-y-4 mt-[-100px]"
-          >
-            <img
-              src={UprytLogo}
-              alt="Upryt Logo"
-              className="w-30 h-30 object-contain"
-            />
-            <p className="text-white font-semibold text-xl">
-              The New Standard in Workplace Wellness.
-            </p>
-            <p className="text-white text-sm">
-              UPRYT helps you correct your sitting posture in real-time using AI.
-              Say goodbye to slouching and hello to better posture—effortlessly.
-            </p>
-          </motion.div>
-        </div>
-        </div>
+          <div className="hidden md:flex md:w-1/2 h-full bg-blue-950 items-center justify-center p-8"> 
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 2, ease: "easeOut"}}
+              className="flex flex-col items-center justify-center text-center space-y-4"
+            >
+              <img
+                src={UprytLogo}
+                alt="Upryt Logo"
+                className="w-30 h-30 object-contain"
+              />
+              <p className="text-white font-semibold text-xl">
+                The New Standard in Workplace Wellness.
+              </p>
+              <p className="text-white text-sm">
+                UPRYT helps you correct your sitting posture in real-time using AI.
+                Say goodbye to slouching and hello to better posture—effortlessly.
+              </p>
+            </motion.div>
+          </div>
         </div>
       </WidthWrapper>
     </div>
