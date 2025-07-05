@@ -3,7 +3,7 @@ import UprytLogo from '../assets/uprytblue.png';
 
 const Footer = () => {
   return (
-    <footer className="bg-white border-t border-gray-200 text-gray-700 text-sm mt-10">
+    <footer className="bg-white border-t border-gray-200 text-gray-700 text-sm ">
     <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-2 md:grid-cols-5 gap-8">
   
   {/* Branding block spans 2 columns on medium screens and above */}
