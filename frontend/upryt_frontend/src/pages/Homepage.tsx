@@ -2,7 +2,7 @@ import React from 'react'
 import HeroSection from '../components/HeroSection'
 import { FeaturesSection } from '../components/Feature'
 import About from '../components/About'
-import Services from '../components/Services'
+import Pricing from '../components/Pricing'
 
 const Homepage = () => {
   return (
@@ -10,7 +10,7 @@ const Homepage = () => {
       <HeroSection/>
       <About/>
       <FeaturesSection/>
-      <Services/>
+      <Pricing/>
     </div>
   )
 }
