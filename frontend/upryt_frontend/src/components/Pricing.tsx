@@ -46,6 +46,10 @@ const plans = [
 
 export default function PricingPlans() {
   return (
+    <section
+    id="pricing" // 👈 This enables navbar scroll
+    className="py-16 px-4 md:px-10 bg-white text-gray-800"
+  >
     <div className="min-h-screen w-full bg-white px-4 md:px-8 py-10">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
         {plans.map((plan, i) => (
@@ -89,5 +93,6 @@ export default function PricingPlans() {
         ))}
       </div>
     </div>
+    </section>
   );
 }
