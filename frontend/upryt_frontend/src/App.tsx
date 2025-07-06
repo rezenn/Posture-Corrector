@@ -10,13 +10,14 @@ import { FeaturesSection } from './components/Feature.tsx'
 import { Toaster } from 'sonner'
 import About from './components/About.tsx'
 import HeroSection from './components/HeroSection.tsx'
-
+import PostLoginHome from './pages/postloginHome.tsx'
 
 const App = () => {
   return (
     <div>
       <Router>
         <Routes>
+          {/* Pre-login/public pages */}
           <Route element={<MainLayout />}>
             <Route index path='/' element={<Homepage />} />
             <Route path="/register" element={<Register />} />
@@ -26,18 +27,10 @@ const App = () => {
             <Route path="/features" element={<FeaturesSection />} />
             <Route path="/about" element={<About />} />
             <Route path="/herosection" element={<HeroSection />} />
-
-            
           </Route>
 
-
-          {/* <Route element={<adnublayout />}>
-            <Route index element={<Homepage />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgotpassword" element={<ForgotPassword />} />
-            <Route path="/otpform" element={<OtpForm />} />
-          </Route> */}
+          {/* Post-login page (does NOT use MainLayout) */}
+          <Route path="/postloginhome" element={<PostLoginHome />} />
         </Routes>
       </Router>
     </div>
