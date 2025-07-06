@@ -1,7 +1,6 @@
-<<<<<<< HEAD
+
 /node_modules
+
+index.html
 .env
 !.env.sample
-=======
-/node_modules
->>>>>>> ac6c390fa7a1911365dfe10f685d79102dc6e58c

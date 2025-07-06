@@ -1,5 +1,6 @@
 "use client"
-
+import { useGoogleLogin } from '@react-oauth/google';
+import { loginWithGoogle } from '../api/auth';
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -30,6 +31,16 @@ export default function Login() {
     console.log("Login Data:", values)
     // Add your login logic here
   }
+
+
+    const login = useGoogleLogin({
+  onSuccess: async (tokenResponse) => {
+    const data = await loginWithGoogle(tokenResponse.access_token);
+    console.log("✅ Logged in with Google:", data);
+  },
+  onError: () => console.log("❌ Google login failed"),
+});
+
 
   return (
     <div className="min-h-screen w-full bg-white">
@@ -96,6 +107,22 @@ export default function Login() {
                 Don't have an account? <Link to="/register" className="text-blue-950 hover:underline">Sign up</Link>
               </p>
             </div>
+<<<<<<< HEAD
+=======
+
+            <div className="flex flex-col gap-3">
+              <Button  onClick={() => login()}
+              variant="outline" className="w-full flex items-center gap-2"
+             >
+                <FcGoogle className="text-xl" />
+                Continue with Google
+              </Button>
+            </div>
+
+            <p className="text-sm text-center mt-6 text-gray-500">
+              Don't have an account? <a href="/register" className="text-blue-950 hover:underline">Sign up</a>
+            </p>
+>>>>>>> d26226ec7c359152ba6d5dec9feb77b94f514066
           </div>
 
           {/* Right side: Info/Branding */}

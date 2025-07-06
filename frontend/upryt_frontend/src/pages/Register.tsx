@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { toast } from "sonner"
-
+import { useGoogleLogin } from '@react-oauth/google';
+import { loginWithGoogle } from '../api/auth';
 import {
   Form,
   FormControl,
@@ -51,6 +52,16 @@ export default function Register() {
     console.log("Registration Data:", values)
     toast.success("Registered successfully!")
   }
+
+
+      const signupwithgoogle = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+          const data = await loginWithGoogle(tokenResponse.access_token);
+          console.log("✅ Logged in with Google:", data);
+        },
+        onError: () => console.log("❌ Google login failed"),
+      });
+
 
   return (
     <>
@@ -140,7 +151,7 @@ export default function Register() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <Button variant="outline" className="w-full flex items-center gap-2">
+                  <Button onClick={() =>signupwithgoogle()}variant="outline" className="w-full flex items-center gap-2">
                     <FcGoogle className="text-xl" />
                     Sign up with Google
                   </Button>
