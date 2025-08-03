@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import { sendVerificationEmail } from '../helpers/sendVerificationEmail.js';
 import { sendResetPasswordVerificationEmail } from '../helpers/sendResetPasswordVerificationEmail.js';
-
+// 
 // Create a new user
 export const createUser = async (req, res) => {
   const errors = validationResult(req);
@@ -85,19 +85,19 @@ export const createUser = async (req, res) => {
     );
 
     // send verfication email
-    const emailResponse = await sendVerificationEmail(email, otp);
+    const emailResponse = await sendVerificationEmail(fullName, email, otp);
 
-    // if (!emailResponse.success) {
-    //   return Response.json(
-    //     {
-    //       success: false,
-    //       message: emailResponse.message
-    //     },
-    //     {
-    //       status: 500
-    //     }
-    //   );
-    // }
+    if (!emailResponse.success) {
+      return Response.json(
+        {
+          success: false,
+          message: emailResponse.message
+        },
+        {
+          status: 500
+        }
+      );
+    }
 
     return res.status(201).json({ sucess: true, message: 'User signed up successfully. Please verify your email', token: token, user: newUser });
   }
@@ -107,6 +107,36 @@ export const createUser = async (req, res) => {
   }
 };
 
+// send verfication email for registration
+export const handleSendEmailForRegistration = async (req, res) => {
+  // generate 6‑digit OTP & expiry
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiryDate = new Date();
+  expiryDate.setMinutes(expiryDate.getMinutes() + 10);    // Add 10 mins from 'now'
+
+  const { email } = req.body;
+
+  try {
+    const existingUserByEmail = await findUserByEmail(email);
+    if (!existingUserByEmail) {
+      return Response.json({ message: "User not found" }, { status: 404 });
+    }
+
+    await User.findByIdAndUpdate(existingUserByEmail._id, {
+      verifyCode: otp,
+      verifyCodeExpiryDate: expiryDate,
+      isVerified: false,
+    });
+
+
+    await sendVerificationEmail(existingUserByEmail.fullName, email, otp);
+    res.status(200).json({ message: '✅ Email sent successfully' });
+  }
+  catch (error) {
+    console.error('❌ Email failed:', error);
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+}
 
 export const verifyOTPForRegistration = async (req, res) => {
   const { email, otp } = req.body;
@@ -376,19 +406,6 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-export const handleSendEmail = async (req, res) => {
-  console.log("req from user contrller:", req.body)
-  const { email, html } = req.body;
-
-  try {
-    await sendVerificationEmail(email, html);
-    res.status(200).json({ message: '✅ Email sent successfully' });
-  } catch (error) {
-    console.error('❌ Email failed:', error);
-    res.status(500).json({ error: 'Failed to send email' });
-  }
-};
-
 
 export const findUserByUsername = async (req, res) => {
   try {
@@ -406,16 +423,28 @@ export const findUserByUsername = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        username: user.username,
-        isVerified: user.isVerified
-      }
+      user
     });
   } catch (error) {
     console.error("Error finding user by username:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+export const findUserByEmail = async (email) => {
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error("Error finding user by email:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

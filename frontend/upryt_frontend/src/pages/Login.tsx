@@ -22,20 +22,13 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
 } from "../components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { Label } from "../components/ui/label.tsx";
 
-
-// const loginSchema = z.object({
-//   email: z.string().email({ message: "Enter a valid email address" }),
-//   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-// })
 
 export default function Login() {
   const navigate = useNavigate();
@@ -44,7 +37,7 @@ export default function Login() {
   // OTP dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [emailToVerify, setEmailToVerify] = useState("");
-  const [code, setCode] = useState("");
+  // const [code, setCode] = useState("");
   const [sendingCode, setSendingCode] = useState(false);
 
   // State to control password visibility
@@ -123,9 +116,6 @@ export default function Login() {
     setSendingCode(true);
     try {
       const response = await sendVerificationEmailForRegistration(emailToVerify);
-      // const response = await axios.put("/api/auth/send-verification-email", {
-      //   email: emailToVerify,
-      // });
       toast.success(response.data.message);
       navigate(`/verify/${response.data.user.username}`);
     }
@@ -217,7 +207,7 @@ export default function Login() {
               </div>
 
               <p className="text-sm text-center mt-6 text-gray-500">
-                Don't have an account? <Link to="/register" className="text-blue-950 hover:underline">Sign up</Link>
+                Don't have an account? <Link to="/sign-up" className="text-blue-950 hover:underline">Sign up</Link>
               </p>
             </div>
 

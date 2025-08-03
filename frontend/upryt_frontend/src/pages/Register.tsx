@@ -95,7 +95,6 @@ export default function Register() {
       });
 
       navigate(`/verify/${username}`);
-      // router.replace(`/verify/${username}`);
     }
     catch (error) {
       console.error("Error in sign up of user", error);
