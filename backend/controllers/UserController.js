@@ -100,7 +100,7 @@ export const createUser = async (req, res) => {
 
 
 export const loginUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  const {  email, password } = req.body;
 
   try {
     let user;

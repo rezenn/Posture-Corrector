@@ -7,7 +7,7 @@ import postureRoutes from './routes/postureRoutes.js';
 import connectDB from './db/db.js';
 import  UserRoute from './routes/UserRoute.js'
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json()); // ✅ this one is very important
@@ -28,7 +28,7 @@ app.use(express.json()); // ✅ this one is very important
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 
   credentials: true
