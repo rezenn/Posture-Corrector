@@ -14,6 +14,8 @@ import pygame
 import csv
 from datetime import datetime
 from fpdf import FPDF
+import matplotlib.pyplot as plt
+from adaptive_feedback import AdaptivePostureFeedback
 
 # Load AI model
 model_loaded = False
@@ -75,6 +77,8 @@ class PostureApp:
         self.root = root
         self.root.title("Upryt")
         self.root.geometry("1280x800")
+        
+        self.adaptive_feedback = AdaptivePostureFeedback()
 
         # Style configuration
         self.style = ttk.Style(theme='superhero')
@@ -334,6 +338,14 @@ class PostureApp:
             min_eye_dist = 40
             max_eye_dist = 110
 
+            # Update adaptive feedback system
+            self.adaptive_feedback.update_profile([shoulder_angle, neck_angle, spine_angle, symmetry_diff])
+
+            # Get personalized feedback
+            personal_feedback = self.adaptive_feedback.get_personalized_feedback(
+                [shoulder_angle, neck_angle, spine_angle, symmetry_diff]
+            )
+
             if eye_distance < min_eye_dist:
                 distance_status = "Too Far"
                 self.speak_alert("You are sitting too far. Please move closer.",
@@ -372,12 +384,19 @@ class PostureApp:
                     if symmetry_diff > 15:
                         issues.append("body is not symmetrical")
 
-                    issue_translations = {
-                        "shoulders are not level": "काँधहरू स्तर छैनन्",
-                        "neck is leaning forward": "घाँटी अगाडि झुकिएको छ",
-                        "spine is bent": "मेरुदण्ड बाङ्गिएको छ",
-                        "body is not symmetrical": "शरीर सममित छैन"
-                    }
+                        # Add personalized feedback
+                        for fb in personal_feedback:
+                            if fb not in issues:  # Avoid duplicates
+                                issues.append(fb)
+                        
+                        issue_translations = {
+                            # ... existing translations ...
+                            "Your shoulders are leaning left more than usual": "तपाईंको काँधहरू सामान्य भन्दा बायाँतिर धेरै झुकेको छ",
+                            "Your shoulders are leaning right more than usual": "तपाईंको काँधहरू सामान्य भन्दा दायाँतिर धेरै झुकेको छ",
+                            "Your neck is leaning forward more than usual": "तपाईंको घाँटी सामान्य भन्दा धेरै अगाडि झुकेको छ",
+                            "Your spine is more bent than usual": "तपाईंको मेरुदण्ड सामान्य भन्दा धेरै बाङ्गिएको छ",
+                            "Your posture is less symmetrical than usual": "तपाईंको बसाइ सामान्य भन्दा कम सममित छ"
+                        }
 
                     en_feedback = "Please fix your posture: " + ", ".join(issues) + "."
                     np_feedback = "कृपया तपाईंको बसाइ सुधार गर्नुहोस्: " + "। ".join(
@@ -433,8 +452,6 @@ class PostureApp:
             self.segment_good_time += time_delta
         else:
             self.bad_posture_time += time_delta
-            self.segment_poor_time += time_delta
-
         # Handle posture changes and streaks
         if posture_status != self.last_posture:
             self.posture_change_count += 1
@@ -489,13 +506,13 @@ class PostureApp:
             # Check if new segment needs to be recorded
             while now - self.last_segment_time >= self.segment_duration:
                 segment_data = {
-                    "Time": round(self.last_segment_time - self.start_time + self.segment_duration,2),
-                    "Good Time": round(self.segment_good_time,2),
-                    "Poor Time": round(self.segment_poor_time,2),
+                    "Time": int(self.last_segment_time - self.start_time + self.segment_duration),
+                    "Good Time": int(self.segment_good_time),
+                    "Poor Time": int(self.segment_poor_time),
                     "Corrections": self.correction_count,
                     "Changes": self.posture_change_count,
                     "Posture": self.last_posture,
-                    "Good %": round((self.segment_good_time / self.segment_duration) * 100)
+                    "Good %": int((self.segment_good_time / self.segment_duration) * 100)
                 }
                 self.session_segments.append(segment_data)
                 self.segment_good_time = 0
@@ -507,6 +524,48 @@ class PostureApp:
     def on_close(self):
         self.cap.release()
         self.root.destroy()
+
+    def generate_posture_charts(self):
+        times = [seg["Time"] for seg in self.session_segments]
+        good = [seg["Good Time"] for seg in self.session_segments]
+        poor = [seg["Poor Time"] for seg in self.session_segments]
+        good_percent = [seg["Good %"] for seg in self.session_segments]
+
+        # Time Series Line Chart (Good % Over Time)
+        plt.figure(figsize=(10, 5))
+        plt.plot(times, good_percent, marker='o', color='seagreen', linewidth=2, label='Good Posture %')
+        plt.title("Posture Trend Over Time")
+        plt.xlabel("Time")
+        plt.ylabel("Good Posture %")
+        plt.ylim(0,100)
+        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("posture_trend_over_time.png")
+        plt.close()
+
+        # Bar Chart (% Good Posture per Segment)
+        plt.figure(figsize=(8, 4))
+        plt.bar(times, good, width=1, label='Good', color='green')
+        plt.bar(times, poor, bottom=good, width=1, label='Poor', color='red')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Time in Segment (s)')
+        plt.title('Good vs Poor Posture Time per Segment')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("bar_chart.png")
+        plt.close()
+
+         # Pie chart: Total Good vs Poor posture
+        total_good = sum(good)
+        total_poor = sum(poor)
+        plt.figure(figsize=(5, 5))
+        plt.pie([total_good, total_poor], labels=["Good", "Poor"],
+                autopct='%1.1f%%', colors=["lightgreen", "salmon"])
+        plt.title("Total Posture Distribution")
+        plt.tight_layout()
+        plt.savefig("pie_chart.png")
+        plt.close()
 
     def export_stats(self):
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -532,7 +591,10 @@ class PostureApp:
                          "सत्रको तथ्यांक सफलतापूर्वक निर्यात गरियो।")
 
     def export_pdf(self):
-        now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now()
+        now_text = now.strftime("%Y-%m-%d %H:%M:%S")
+        out = f"posture_report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"  # <-- define filename
+
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 16)
@@ -558,34 +620,29 @@ class PostureApp:
             pdf.cell(60, 8, name, border=1)
             pdf.cell(80, 8, val, border=1, ln=1)
             
+        # Generate charts
+        self.generate_posture_charts()
+
+        # Add charts to PDF
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "Visual Posture Analytics", ln=1, align="C")
+
+        pdf.image("posture_trend_over_time.png", x=10, y=None, w=180)
         pdf.ln(10)
-        # Detailed session data header
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10, "Session Breakdown (Every 10 Seconds)", ln=1)
+        pdf.image("bar_chart.png", x=50, y=None, w=100)
+        pdf.ln(10)
+        pdf.image("pie_chart.png", x=50, y=None, w=100)
 
-        # Column headers
-        headers = ["Time(s)", "Good(s)", "Poor(s)", "Corrections", "Changes", "Posture", "Good %"]
-        col_widths = [25, 25, 25, 30, 30, 30, 25]
-
-        pdf.set_font("Arial", "B", 10)
-        for i, h in enumerate(headers):
-            pdf.cell(col_widths[i], 8, h, border=1, align="C")
-        pdf.ln()
-
-        # Segment data rows
-        pdf.set_font("Arial", size=10)
-        for seg in self.session_segments:
-            pdf.cell(col_widths[0], 8, str(seg["Time"]), border=1, align="C")
-            pdf.cell(col_widths[1], 8, str(seg["Good Time"]), border=1, align="C")
-            pdf.cell(col_widths[2], 8, str(seg["Poor Time"]), border=1, align="C")
-            pdf.cell(col_widths[3], 8, str(seg["Corrections"]), border=1, align="C")
-            pdf.cell(col_widths[4], 8, str(seg["Changes"]), border=1, align="C")
-            pdf.cell(col_widths[5], 8, seg["Posture"], border=1, align="C")
-            pdf.cell(col_widths[6], 8, f"{seg['Good %']}%", border=1, align="C")
-            pdf.ln()
-
-        out = f"posture_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         pdf.output(out)
+
+        for chart in ["posture_trend_over_time.png", 
+                      "bar_chart.png", 
+                      "pie_chart.png"
+                    ]:
+            if os.path.exists(chart):
+                os.remove(chart)
+
         self.speak_alert("PDF exported successfully.",
                          "पीडीएफ सफलतापूर्वक निर्यात भयो।")
 

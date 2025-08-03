@@ -614,7 +614,7 @@ class PostureApp:
 
         pdf.image("posture_trend_over_time.png", x=10, y=None, w=180)
         pdf.ln(10)
-        pdf.image("bar_chart.png", x=50, y=None, w=100)
+        pdf.image("bar_chart.png", x=None, y=None, w=180)
         pdf.ln(10)
         pdf.image("pie_chart.png", x=50, y=None, w=100)
 
