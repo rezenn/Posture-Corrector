@@ -8,8 +8,7 @@ import OtpForm from './pages/otpform.tsx'
 import MainLayout from './components/MainLayout.tsx'
 import {FeaturesSection} from './pages/Feature.tsx'
 import { Toaster } from 'sonner'
-
-import ForgotPassword from './pages/forgotpassword.tsx'
+import PostureChart from './pages/PostureChart.tsx'
 
 const App = () => {
   return (
@@ -23,7 +22,8 @@ const App = () => {
             <Route path="/forgotpassword" element={<ForgotPassword />} />
             <Route path="/otpform" element={<OtpForm />} />
             <Route path="/feature" element={<FeaturesSection />} />
-            
+            <Route path="/chart" element={<PostureChart />} />
+
           </Route>
 
 

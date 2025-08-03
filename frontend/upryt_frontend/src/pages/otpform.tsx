@@ -1,4 +1,5 @@
 "use client";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +16,9 @@ import {
 } from "../components/ui/form";
 import { useRef, useState } from "react";
 
+import { verifyResetOTP } from "../api/auth"
+
+
 const otpSchema = z.object({
   otp: z
     .string()
@@ -25,12 +29,18 @@ const otpSchema = z.object({
 type OtpFormValues = z.infer<typeof otpSchema>;
 
 export default function OtpForm() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const email = location.state?.email; // email passed from forgot password page
+
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpSchema),
     defaultValues: {
       otp: "",
     },
   });
+
+
 
   const [otpArray, setOtpArray] = useState<string[]>(Array(6).fill(""));
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,22 +85,31 @@ export default function OtpForm() {
     inputRefs.current[lastFilledIndex]?.focus();
   };
 
-  const onSubmit = async (values: OtpFormValues) => {
-    setIsSubmitting(true);
-    try {
-      // Simulate API call for OTP verification
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("OTP Verified Successfully");
-      console.log("Entered OTP:", values.otp);
-      form.reset();
-      setOtpArray(Array(6).fill(""));
-      inputRefs.current[0]?.focus();
-    } catch (error) {
-      toast.error("Failed to verify OTP. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+ const onSubmit = async (values: OtpFormValues) => {
+  setIsSubmitting(true);
+  try {
+    const email = location.state?.email;
+    if (!email) throw new Error("Email is missing");
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log(email)
+    // 👇 Send API request to verify OTP
+    const response = await verifyResetOTP(email,values.otp);
+
+    toast.success(response.data.message || "OTP Verified Successfully");
+    console.log("response",response.data)
+    // Optionally navigate to Reset Password page
+    navigate("/login", { state: { email } });
+
+    form.reset();
+    setOtpArray(Array(6).fill(""));
+    inputRefs.current[0]?.focus();
+  } catch (error: any) {
+    toast.error(error.response?.data?.message || "Failed to verify OTP. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">

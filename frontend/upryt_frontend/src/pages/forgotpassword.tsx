@@ -1,7 +1,7 @@
 "use client"
 
 import { useForm } from "react-hook-form"
-import { Link } from "react-router-dom"
+import { Link,useNavigate } from "react-router-dom"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "../components/ui/button"
@@ -15,6 +15,7 @@ const forgotSchema = z.object({
   email: z.string().email({ message: "Enter a valid email address" }),
 })
 
+
 export default function ForgotPassword() {
   const form = useForm<z.infer<typeof forgotSchema>>({
     resolver: zodResolver(forgotSchema),
@@ -22,11 +23,14 @@ export default function ForgotPassword() {
       email: "",
     },
   })
+      const navigate = useNavigate();
+
   const onSubmit = async (values: z.infer<typeof forgotSchema>) => {
+
     try {
       const res = await sendForgotPasswordEmail(values.email);
       console.log("sent ", res.data.message);
-      // navigate("/verify-otp", { state: { email: values.email } });
+      navigate("/otpform", { state: { email: values.email } });
     } catch (err: any) {
       console.error("error", err.response?.data?.message || "Error sending reset email");
       alert("Error: " + (err.response?.data?.message || "Something went wrong"));
