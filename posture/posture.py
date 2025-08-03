@@ -14,8 +14,7 @@ import pygame
 import csv
 from datetime import datetime
 from fpdf import FPDF
-import matplotlib.pyplot as plt
-
+import requests
 # Load AI model
 model_loaded = False
 try:
@@ -56,11 +55,15 @@ def speak_np(text):
     threading.Thread(target=play_nepali, daemon=True).start()
 
 # English TTS using pyttsx3
+
+
 def speak_en(text):
     threading.Thread(target=lambda: tts_engine.say(
         text) or tts_engine.runAndWait(), daemon=True).start()
 
 # Angle calculator
+
+
 def calculate_angle(a, b, c):
     a, b, c = np.array(a), np.array(b), np.array(c)
     ba = a - b
@@ -72,16 +75,26 @@ def calculate_angle(a, b, c):
 
 
 class PostureApp:
+    def send_data_to_backend(self, payload):
+        try:
+            print("Sending payload to backend...")
+            response = requests.post("http://localhost:5000/api/posture", json=payload, timeout=1)
+            print("✅ Backend response:", response.status_code, response.text)
+        except Exception as e:
+            print("Failed to send to backend:", e)
+
+    
+
     def __init__(self, root):
         self.root = root
-        self.root.title("Upryt")
+        self.root.title("Upryt - Posture Monitor")
         self.root.geometry("1280x800")
 
         # Style configuration
         self.style = ttk.Style(theme='superhero')
         self.style.configure('TLabel', font=('Helvetica', 12))
         self.style.configure('Title.TLabel', font=('Helvetica', 24, 'bold'))
-        self.style.configure('Status.TLabel', font=('Helvetica', 24, 'bold'))
+        self.style.configure('Status.TLabel', font=('Helvetica', 14, 'bold'))
         self.style.configure('Good.TLabel', foreground='lightgreen')
         self.style.configure('Poor.TLabel', foreground='salmon')
         self.style.configure('Angle.TLabel', font=('Consolas', 11))
@@ -96,10 +109,10 @@ class PostureApp:
 
         # Right panel (stats)
         self.right_frame = ttk.Frame(self.main_frame, width=400)
-        self.right_frame.pack(side=RIGHT, fill=Y, expand=NO, padx=(10, 0))
+        self.right_frame.pack(side=RIGHT, fill=Y, padx=(10, 0))
 
         # Title
-        ttk.Label(self.left_frame, text="Upryt - Posture Monitoring System",
+        ttk.Label(self.left_frame, text="Posture Monitoring System",
                   style='Title.TLabel').pack(pady=(0, 15))
 
         # Language selector
@@ -124,30 +137,9 @@ class PostureApp:
         self.status_label = ttk.Label(
             self.status_frame,
             textvariable=self.status_var,
-            style='Status.TLabel',
-            width=25,
-            anchor="center"
+            style='Status.TLabel'
         )
         self.status_label.grid(row=0, column=1, sticky=W)
-        # Feedback label for detailed issues
-        
-        # Feedback label for detailed issues
-        self.feedback_var = ttk.StringVar(value=" " * 200)  
-
-        self.feedback_frame = ttk.Frame(self.status_frame)
-        self.feedback_frame.grid(row=3, column=0, columnspan=2, sticky=EW, pady=(5, 0))
-
-        self.feedback_label = ttk.Label(
-            self.feedback_frame,
-            textvariable=self.feedback_var,
-            font=('arial', 20, 'italic'),
-            foreground='yellow',
-            padding=10,
-            wraplength=1000,
-            anchor="w",
-            justify="left"
-        )
-        self.feedback_label.pack(fill=X)
 
         ttk.Label(self.status_frame,
                   text="Body Angles (Shoulder, Neck, Spine, Symmetry) + Distance:").grid(
@@ -159,9 +151,7 @@ class PostureApp:
             style='Angle.TLabel',
             relief=SOLID,
             padding=5,
-            width=60,
-            anchor="w",
-            wraplength=500
+            width=60
         )
         self.angle_display.grid(
             row=2, column=0, columnspan=2, sticky=EW, pady=5)
@@ -174,7 +164,7 @@ class PostureApp:
         )
         self.video_frame.pack(fill=BOTH, expand=YES)
         self.video_label = ttk.Label(self.video_frame)
-        self.video_label.pack(fill=BOTH, padx=400, expand=YES)
+        self.video_label.pack(expand=YES)
 
         # Right panel content
         self.stats_frame = ttk.Labelframe(
@@ -183,10 +173,6 @@ class PostureApp:
             padding=15
         )
         self.stats_frame.pack(fill=BOTH, expand=YES, pady=(0, 10))
-
-        self.segment_duration = 10
-        self.last_segment_time = None
-        self.session_segments = []  # Will hold dictionaries with detailed stats
 
         # Statistics variables
         self.stats_vars = {
@@ -203,9 +189,9 @@ class PostureApp:
 
         # Create stats labels
         for i, (text, var) in enumerate(self.stats_vars.items()):
-            ttk.Label(self.stats_frame, text=text + ":", anchor="w",
+            ttk.Label(self.stats_frame, text=text + ":",
                       width=20).grid(row=i, column=0, sticky=W, padx=5, pady=3)
-            ttk.Label(self.stats_frame, textvariable=var, width=10, anchor="w",
+            ttk.Label(self.stats_frame, textvariable=var,
                       style='TLabel').grid(row=i, column=1, sticky=E, padx=5, pady=3)
 
         # Progress bar for good posture percentage
@@ -253,8 +239,6 @@ class PostureApp:
         self.posture_change_count = 0
         self.max_good_streak = 0
         self.max_poor_streak = 0
-        self.segment_good_time = 0
-        self.segment_poor_time = 0
         self.current_streak_start = None
         self.current_streak_type = None
 
@@ -272,13 +256,6 @@ class PostureApp:
             self.last_alert_time = now
 
     def update_video(self):
-
-        current_time = time.time()
-        if not hasattr(self, 'last_frame_time'):
-            self.last_frame_time = current_time
-        time_delta = current_time - self.last_frame_time
-        self.last_frame_time = current_time
-
         ret, frame = self.cap.read()
         if not ret:
             self.status_var.set("Camera error.")
@@ -286,12 +263,10 @@ class PostureApp:
 
         # Start session timer when first frame arrives
         if not self.session_active:
-            now = time.time()
             self.session_active = True
-            self.start_time = now
-            self.last_segment_time = now 
-            self.posture_change_time = now
-            self.current_streak_start = now
+            self.start_time = time.time()
+            self.posture_change_time = self.start_time
+            self.current_streak_start = self.start_time
 
         frame = cv2.flip(frame, 1)
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -362,43 +337,13 @@ class PostureApp:
                 if self.bad_posture_start is None:
                     self.bad_posture_start = time.time()
                 elif time.time() - self.bad_posture_start > 2:
-                    # Determine specific problem
-                    issues = []
-                    if shoulder_angle < 85:
-                        issues.append("shoulders are not level")
-                    if neck_angle < 25:
-                        issues.append("neck is leaning forward")
-                    if spine_angle < 140:
-                        issues.append("spine is bent")
-                    if symmetry_diff > 15:
-                        issues.append("body is not symmetrical")
-
-                    issue_translations = {
-                        "shoulders are not level": "काँधहरू स्तर छैनन्",
-                        "neck is leaning forward": "घाँटी अगाडि झुकिएको छ",
-                        "spine is bent": "मेरुदण्ड बाङ्गिएको छ",
-                        "body is not symmetrical": "शरीर सममित छैन"
-                    }
-
-                    en_feedback = "Please fix your posture: " + ", ".join(issues) + "."
-                    np_feedback = "कृपया तपाईंको बसाइ सुधार गर्नुहोस्: " + "। ".join(
-                        [issue_translations[i] for i in issues]) + "।"
-
-                    self.speak_alert(en_feedback, np_feedback)
-
-                    # Show the feedback on screen too
-                    if self.language.get() == "Nepali":
-                        self.feedback_var.set(np_feedback if np_feedback else " " * 200)
-                    else:
-                        self.feedback_var.set(en_feedback if en_feedback else " " * 200)
-
+                    self.speak_alert("Please fix your posture.",
+                                     "कृपया आफ्नो बस्ने तरिका सुधार गर्नुहोस्।")
                     self.correction_count += 1
-                    self.stats_vars["Corrections"].set(str(self.correction_count))
-
+                    self.stats_vars["Corrections"].set(
+                        str(self.correction_count))
             else:
                 self.bad_posture_start = None
-                self.feedback_var.set("")  # Clear previous feedback
-
 
             mp_drawing.draw_landmarks(
                 frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
@@ -430,11 +375,9 @@ class PostureApp:
 
         # Update posture times
         if posture_status == "Good Posture":
-            self.good_posture_time += time_delta
-            self.segment_good_time += time_delta
+            self.good_posture_time += 0.1
         else:
-            self.bad_posture_time += time_delta
-            self.segment_poor_time += time_delta
+            self.bad_posture_time += 0.1
 
         # Handle posture changes and streaks
         if posture_status != self.last_posture:
@@ -479,6 +422,7 @@ class PostureApp:
         self.stats_vars["Max Poor Streak"].set(f"{int(self.max_poor_streak)}s")
 
         # Update progress bar
+        # Update progress bar and stats if session is active
         if session_duration > 0:
             good_percentage = int(
                 (self.good_posture_time / session_duration) * 100)
@@ -486,22 +430,37 @@ class PostureApp:
             self.progress['value'] = good_percentage
             self.progress.configure(
                 bootstyle=SUCCESS if good_percentage > 50 else DANGER)
-            
-            # Check if new segment needs to be recorded
-            while now - self.last_segment_time >= self.segment_duration:
-                segment_data = {
-                    "Time": int(self.last_segment_time - self.start_time + self.segment_duration),
-                    "Good Time": int(self.segment_good_time),
-                    "Poor Time": int(self.segment_poor_time),
-                    "Corrections": self.correction_count,
-                    "Changes": self.posture_change_count,
-                    "Posture": self.last_posture,
-                    "Good %": int((self.segment_good_time / self.segment_duration) * 100)
+
+            # Realtime backend update every 1 second
+            if not hasattr(self, 'last_backend_send'):
+                self.last_backend_send = 0
+
+            if time.time() - self.last_backend_send > 1:
+                posture_score = good_percentage  # use it directly or refine later
+                payload = {
+                    "posture": posture_status,
+                    "shoulder_angle": round(shoulder_angle, 2),
+                    "neck_angle": round(neck_angle, 2),
+                    "spine_angle": round(spine_angle, 2),
+                    "symmetry_score": round(symmetry_diff, 2),
+                    "eye_distance": round(eye_distance, 2),
+                    "posture_score": posture_score,
+                    "session": {
+                        "session_time": int(session_duration),
+                        "good_posture_time": int(self.good_posture_time),
+                        "poor_posture_time": int(self.bad_posture_time),
+                        "corrections": self.correction_count,
+                        "posture_changes": self.posture_change_count,
+                        "current_streak": int(now - self.current_streak_start),
+                        "max_good_streak": int(self.max_good_streak),
+                        "max_poor_streak": int(self.max_poor_streak),
+                        "good_posture_percent": good_percentage
+                    }
                 }
-                self.session_segments.append(segment_data)
-                self.segment_good_time = 0
-                self.segment_poor_time = 0
-                self.last_segment_time += self.segment_duration
+
+                self.send_data_to_backend(payload)
+                self.last_backend_send = time.time()
+
 
         self.root.after(100, self.update_video)
 
@@ -509,57 +468,11 @@ class PostureApp:
         self.cap.release()
         self.root.destroy()
 
-    def generate_posture_charts(self):
-        times = [seg["Time"] for seg in self.session_segments]
-        good = [seg["Good Time"] for seg in self.session_segments]
-        poor = [seg["Poor Time"] for seg in self.session_segments]
-        good_percent = [seg["Good %"] for seg in self.session_segments]
-
-        # Time Series Line Chart (Good % Over Time)
-        plt.figure(figsize=(10, 5))
-        plt.plot(times, good_percent, marker='o', color='seagreen', linewidth=2, label='Good Posture %')
-        plt.title("Posture Trend Over Time")
-        plt.xlabel("Time")
-        plt.ylabel("Good Posture %")
-        plt.ylim(0,100)
-        plt.grid(True, linestyle='--', alpha=0.5)
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig("posture_trend_over_time.png")
-        plt.close()
-
-        # Bar Chart (% Good Posture per Segment)
-        plt.figure(figsize=(8, 4))
-        plt.bar(times, good, width=1, label='Good', color='green')
-        plt.bar(times, poor, bottom=good, width=1, label='Poor', color='red')
-        plt.xlabel('Time (s)')
-        plt.ylabel('Time in Segment (s)')
-        plt.title('Good vs Poor Posture Time per Segment')
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig("bar_chart.png")
-        plt.close()
-
-         # Pie chart: Total Good vs Poor posture
-        total_good = sum(good)
-        total_poor = sum(poor)
-        plt.figure(figsize=(5, 5))
-        plt.pie([total_good, total_poor], labels=["Good", "Poor"],
-                autopct='%1.1f%%', colors=["lightgreen", "salmon"])
-        plt.title("Total Posture Distribution")
-        plt.tight_layout()
-        plt.savefig("pie_chart.png")
-        plt.close()
-
     def export_stats(self):
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         filename = f"posture_stats_{now}.csv"
         with open(filename, mode="w", newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["Time (s)", "Good Time (s)", "Poor Time (s)", "Corrections", "Changes", "Posture", "Good %"])
-            for seg in self.session_segments:
-                writer.writerow([seg["Time"], seg["Good Time"], seg["Poor Time"],
-                                seg["Corrections"], seg["Changes"], seg["Posture"], seg["Good %"]])
             writer.writerow(["Metric", "Value"])
             writer.writerow(
                 ["Session Time (s)", int(time.time() - self.start_time)])
@@ -575,18 +488,15 @@ class PostureApp:
                          "सत्रको तथ्यांक सफलतापूर्वक निर्यात गरियो।")
 
     def export_pdf(self):
-        now = datetime.now()
-        now_text = now.strftime("%Y-%m-%d %H:%M:%S")
-        out = f"posture_report_{now.strftime('%Y%m%d_%H%M%S')}.pdf"  # <-- define filename
-
+        now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 16)
         pdf.cell(0, 10, "Upryt", ln=1, align="C")
         pdf.cell(0, 10, "Posture Session Report", ln=2, align="C")
         pdf.ln(5)
-
         pdf.set_font("Arial", size=15)
+
         data = [
             ("Generated:", now_text),
             ("Session Time", f"{int(time.time() - self.start_time)}s"),
@@ -603,30 +513,9 @@ class PostureApp:
         for name, val in data:
             pdf.cell(60, 8, name, border=1)
             pdf.cell(80, 8, val, border=1, ln=1)
-            
-        # Generate charts
-        self.generate_posture_charts()
 
-        # Add charts to PDF
-        pdf.add_page()
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Visual Posture Analytics", ln=1, align="C")
-
-        pdf.image("posture_trend_over_time.png", x=10, y=None, w=180)
-        pdf.ln(10)
-        pdf.image("bar_chart.png", x=None, y=None, w=180)
-        pdf.ln(10)
-        pdf.image("pie_chart.png", x=50, y=None, w=100)
-
+        out = f"posture_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         pdf.output(out)
-
-        for chart in ["posture_trend_over_time.png", 
-                      "bar_chart.png", 
-                      "pie_chart.png"
-                    ]:
-            if os.path.exists(chart):
-                os.remove(chart)
-
         self.speak_alert("PDF exported successfully.",
                          "पीडीएफ सफलतापूर्वक निर्यात भयो।")
 

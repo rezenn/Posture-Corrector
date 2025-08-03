@@ -7,3 +7,5 @@ joblib
 pyttsx3
 Pillow
 matplotlib
+fpdf
+ttkbootstrap
