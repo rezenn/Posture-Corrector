@@ -75,4 +75,3 @@ import {
       </section>
     );
   };
-  

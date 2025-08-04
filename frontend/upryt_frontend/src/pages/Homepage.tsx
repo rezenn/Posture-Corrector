@@ -4,6 +4,10 @@ import { motion } from "framer-motion"
 import Navbar from '../components/Navbar'
 import GoodPosture from '../assets/goodposture.png'
 import { Link } from "react-router-dom"
+import HeroSection from '../components/HeroSection'
+import { FeaturesSection } from '../components/Feature'
+import About from '../components/About'
+import Pricing from '../components/Pricing'
 
 const Homepage = () => {
   return (

@@ -11,7 +11,9 @@ import OtpForm from './pages/otpform.tsx';
 import MainLayout from './components/MainLayout.tsx';
 import { FeaturesSection } from './pages/Feature.tsx';
 import PostureChart from './pages/PostureChart.tsx';
-
+import About from './components/About.tsx'
+import HeroSection from './components/HeroSection.tsx'
+import PostLoginHome from './pages/postloginhome.tsx';
 
 const App = () => {
   return (
@@ -25,8 +27,9 @@ const App = () => {
           <Route path="/verify-account-registration/:username" element={<VerifyAccountRegistration />} />
           <Route path="/verify-account-reset-password/:email" element={<VerifyAccountResetPassword />} />
           <Route path="/reset-password/:email" element={<ResetPassword />} />
-          <Route path="/otpform" element={<OtpForm />} />
-          <Route path="/feature" element={<FeaturesSection />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/features" element={<FeaturesSection />} />
+          <Route path="/herosection" element={<HeroSection />} />
           <Route path="/chart" element={<PostureChart />} />
         </Routes>
       </Router>

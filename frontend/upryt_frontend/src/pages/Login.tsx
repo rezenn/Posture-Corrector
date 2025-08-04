@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Label } from "../components/ui/label.tsx";
 
 
@@ -139,6 +139,14 @@ export default function Login() {
         <div className="flex justify-center w-full">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl flex h-[600px] overflow-hidden">
             {/* Left side: Login Form */}
+            <Button
+              variant="ghost"
+              className="relative top-4 left-4 p-2 text-gray-600 hover:text-blue-950"
+              onClick={() => navigate("/")}
+              aria-label="Back to home"
+            >
+              <ArrowLeft size={24} />
+            </Button>
             <div className="w-1/2 p-8 flex flex-col justify-center">
               <h2 className="text-2xl font-bold mb-2 text-gray-800">Welcome Back!</h2>
               <p className="text-sm text-gray-500 mb-6">Login to your UPRYT account</p>

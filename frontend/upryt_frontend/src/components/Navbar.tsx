@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { Button } from "../components/ui/button"
 import UprytLogo from '../assets/uprytblue.png'
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false)
@@ -19,30 +19,28 @@ const Navbar = () => {
 
   return (
     <header
-  className={`
+      className={`
     fixed top-0 w-full z-50 transition-all duration-300
     ${scrolled ? "bg-white/80 shadow-md backdrop-blur h-14" : "bg-transparent h-20"}
   `}
->
+    >
 
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
-  {/* Left Side: Logo & Links */}
-  <div className="flex items-center w-1/2 space-x-10 ml-6">
-    <img
-      src={UprytLogo}
-      alt="Upryt Logo"
-      className={`transition-all duration-300 ${scrolled ? "h-8" : "h-10"}`}
-    />
-    <div className="hidden md:flex space-x-8 text-l font-medium text-blue-950 ml-6">
-      <a href="#home" className="hover:text-blue-300 transition-colors">Home</a>
-      <a href="#about" className="hover:text-blue-300 transition-colors">About</a>
-      <a href="#features" className="hover:text-blue-300 transition-colors">Features</a>
-      <a href="#services" className="hover:text-blue-300 transition-colors">Services</a>
-    </div>
-  </div>
+        {/* Left Side: Logo & Links */}
+        <div className="flex items-center w-1/2 space-x-10 ml-6">
+          <img
+            src={UprytLogo}
+            alt="Upryt Logo"
+            className={`transition-all duration-300 ${scrolled ? "h-8" : "h-10"}`}
+          />
+          <div className="hidden md:flex space-x-8 text-l font-medium text-blue-950 ml-6">
+            <Link to="/" className="hover:text-blue-300 transition-colors">Home</Link>
+            <Link to="/about" className="hover:text-blue-300 transition-colors">About</Link>
+            <Link to="/features" className="hover:text-blue-300 transition-colors">Features</Link>
+            <Link to="/pricing" className="hover:text-blue-300 transition-colors">Pricing</Link>
 
-  
-</nav>
+          </div>      </div>
+      </nav>
     </header>
   )
 }
