@@ -31,6 +31,7 @@ import { Label } from "../components/ui/label.tsx";
 
 
 export default function Login() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -55,9 +56,9 @@ export default function Login() {
 
   // Sign In
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+    setIsSubmitting(true);
     try {
       const response = await loginUser(data);
-
       const { user } = response.data;
 
       if (user.isVerified) {
@@ -91,6 +92,9 @@ export default function Login() {
         description: errorMessage
       });
     }
+    finally {
+      setIsSubmitting(false);
+    }
   }
 
   const loginWithGoogle = useGoogleLogin({
@@ -117,7 +121,7 @@ export default function Login() {
     try {
       const response = await sendVerificationEmailForRegistration(emailToVerify);
       toast.success(response.data.message);
-      navigate(`/verify/${response.data.user.username}`);
+      navigate(`/verify-account-registration/${response.data.user.username}`);
     }
     catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
@@ -146,7 +150,7 @@ export default function Login() {
                     name="identifier"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Usernameor Email</FormLabel>
+                        <FormLabel>Username or Email</FormLabel>
                         <FormControl>
                           <Input placeholder="Username or Email" {...field} />
                         </FormControl>
@@ -186,9 +190,18 @@ export default function Login() {
                     <Link to="/forgotpassword" className="text-blue-950 hover:underline">Forgot Password?</Link>
                   </div>
 
-                  <Button type="submit" className="w-full bg-blue-950">
-                    Login
-                  </Button>
+                  <div className="flex items-center justify-center">
+                    <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-950">
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Please wait...
+                        </>
+                      ) : (
+                        "Login"
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
               <div className="my-4 flex items-center justify-between">

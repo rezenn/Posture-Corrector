@@ -12,6 +12,7 @@ import { Button } from "../components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form";;
 import { useNavigate, useParams } from "react-router-dom"
 import { verifyAccountForResetPassword } from './../api/Api.ts';
+import { Loader2 } from "lucide-react";
 
 const VerifyAccountResetPassword = () => {
     const [isVerifying, setIsVerifying] = useState(false);
@@ -88,7 +89,14 @@ const VerifyAccountResetPassword = () => {
                         />
                         <div className="flex items-center justify-center">
                             <Button type="submit" disabled={isVerifying} className="w-full">
-                                {isVerifying ? "Verifying..." : "Verify Code"}
+                                {isVerifying ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Verifying...
+                                    </>
+                                ) : (
+                                    "Verify Code"
+                                )}
                             </Button>
                         </div>
                     </form>

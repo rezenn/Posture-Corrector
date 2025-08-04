@@ -13,8 +13,10 @@ export const validateUsernameUnique = async (username: string) => Api.get(`/user
 export const registerUser = async (data: any) => Api.post<ApiResponse>("/user/register-user", data);
 export const loginUser = async (data: any) => Api.post<ApiResponse>("/user/login-user", data);
 export const loginUserWithGoogle = async (access_token: string) => Api.post<ApiResponse>("/user/google-login", { access_token });
-export const sendVerificationEmailForRegistration = async (email: string) => Api.post<ApiResponse>("/user/send-verification-email-registration", email);
-export const verifyAccountForRegistration = async (data: any) => Api.post<ApiResponse>("/user/verify-account-registration", data);
-export const verifyAccountForResetPassword = async (data: any) => Api.post<ApiResponse>("/user/verify-account-reset-password", data);
+export const sendVerificationEmailForRegistration = async (email: string) => Api.put<ApiResponse>("/user/send-verification-email-registration", email);
+export const verifyAccountForRegistration = async (data: any) => Api.put<ApiResponse>("/user/verify-account-registration", data);
+export const forgotPassword = async (data: any) => Api.put<ApiResponse>("/user/forgot-password", data);
+export const verifyAccountForResetPassword = async (data: any) => Api.put<ApiResponse>("/user/verify-account-reset-password", data);
+export const resetPassword = async (data: any) => Api.put<ApiResponse>("/user/reset-password", data);
 
 export default Api;

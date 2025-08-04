@@ -1,7 +1,7 @@
 "use client"
 
 import { useForm } from "react-hook-form"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "../components/ui/button"
@@ -9,6 +9,12 @@ import { Input } from "../components/ui/input"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "../components/ui/form"
 import WidthWrapper from "../components/WidthWrapper"
 import UprytLogo from '../assets/uprytwhite.png'
+import { forgotPassword } from "../api/Api"
+import { toast } from "sonner"
+import type { AxiosError } from "axios"
+import type { ApiResponse } from "../types/ApiResponse"
+import { useState } from "react"
+import { Loader2 } from "lucide-react"
 
 
 const forgotSchema = z.object({
@@ -16,6 +22,8 @@ const forgotSchema = z.object({
 })
 
 export default function ForgotPassword() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeof forgotSchema>>({
     resolver: zodResolver(forgotSchema),
     defaultValues: {
@@ -23,9 +31,28 @@ export default function ForgotPassword() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof forgotSchema>) {
-    console.log("Reset Request Sent To:", values.email)
-    // Handle password reset request logic here
+  const onSubmit = async (data: z.infer<typeof forgotSchema>) => {
+    setIsSubmitting(true);
+    try {
+      const response = await forgotPassword({
+        email: data.email
+      });
+      toast.success('Success', {
+        description: response.data.message
+      });
+
+      navigate(`/verify-account-reset-password/${data.email}`);
+    }
+    catch (error) {
+      console.error("Error sending forgot password request", error);
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast("Failed", {
+        description: axiosError.response?.data.message || "Failed to send reset instructions",
+      });
+    }
+    finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -56,9 +83,18 @@ export default function ForgotPassword() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full bg-blue-950">
-                    Reset Password
-                  </Button>
+                  <div className="flex items-center justify-center">
+                    <Button type="submit" disabled={isSubmitting} className="w-full">
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Reset Password"
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
 

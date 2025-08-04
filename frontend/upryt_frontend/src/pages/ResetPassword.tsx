@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import type { ApiResponse } from "../types/ApiResponse";
 import * as z from "zod";
 import { useState } from "react";
@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom"
-import { verifyAccountForResetPassword } from './../api/Api.ts';
+import { resetPassword } from './../api/Api.ts';
 
 
 const ResetPassword = () => {
@@ -39,9 +39,9 @@ const ResetPassword = () => {
     const onSubmit = async (data: z.infer<typeof resetPasswordSchema>) => {
         setIsSubmitting(true);
         try {
-            const response = await verifyAccountForResetPassword({
+            const response = await resetPassword({
                 email: params.email,
-                password: data.password
+                newPassword: data.password
             });
 
             toast('Success', {
@@ -134,7 +134,7 @@ const ResetPassword = () => {
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Please wait
+                                        Please wait...
                                     </>
                                 ) : (
                                     "Reset"

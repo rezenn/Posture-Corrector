@@ -86,7 +86,6 @@ export default function Register() {
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     setIsSubmitting(true);
-
     try {
       const response = await registerUser(data);
 
@@ -94,7 +93,7 @@ export default function Register() {
         description: response.data.message
       });
 
-      navigate(`/verify/${username}`);
+      navigate(`/verify-account-registration/${username}`);
     }
     catch (error) {
       console.error("Error in sign up of user", error);

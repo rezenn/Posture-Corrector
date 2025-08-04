@@ -88,13 +88,10 @@ export const createUser = async (req, res) => {
     const emailResponse = await sendVerificationEmail(fullName, email, otp);
 
     if (!emailResponse.success) {
-      return Response.json(
+      return res.status(500).json(
         {
           success: false,
           message: emailResponse.message
-        },
-        {
-          status: 500
         }
       );
     }
@@ -113,8 +110,6 @@ export const handleSendEmailForRegistration = async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiryDate = new Date();
   expiryDate.setMinutes(expiryDate.getMinutes() + 10);    // Add 10 mins from 'now'
-
-  const { email } = req.body;
 
   try {
     const existingUserByEmail = await findUserByEmail(email);
@@ -139,16 +134,23 @@ export const handleSendEmailForRegistration = async (req, res) => {
 }
 
 export const verifyOTPForRegistration = async (req, res) => {
-  const { email, otp } = req.body;
+  const { username, code } = req.body;
+  const otp = code
 
-  // validate email and otp
-  if (!email || !otp) {
-    return res.status(400).json({ error: "Please, enter email and otp" });
+  // validate username and otp
+  if (!username || !otp) {
+    return res.status(400).json({ success: false, message: "Please, enter username and otp" });
+  }
+
+  const user = await User.findOne({ username: username, isVerified: false });
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
   }
 
   try {
-    // Check existing user
-    const checkExistingUser = await User.findOne({ email });
+    // Check existing user by email
+    const checkExistingUser = await User.findOne({ email: user.email, isVerified: false });
     if (!checkExistingUser) {
       return res.status(400).json({ success: false, message: "Invalid email address. User not available!" });
     }
@@ -199,7 +201,7 @@ export const verifyOTPForRegistration = async (req, res) => {
 // Login user with username or email
 export const loginUser = async (req, res) => {
   const { identifier, password } = req.body;
-
+  console.log(identifier);
   try {
     let checkExistingUser;
     if (identifier) {
@@ -215,9 +217,19 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid username/email or password" });
     }
 
-    const isMatch = bcrypt.compare(password, checkExistingUser.password);
+    // Compare password
+    const isMatch = await bcrypt.compare(password, checkExistingUser.password);
     if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid password' });
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+
+    // Check if user is verified
+    if (!checkExistingUser.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Account not verified",
+        user: { email: user.email, username: user.username },
+      });
     }
 
     // Generate Token
@@ -282,6 +294,7 @@ export const checkUsernameUnique = async (req, res) => {
 // // Forgot password functionality
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
+  console.log(email);
 
   // validate email
   if (!email) {
@@ -290,7 +303,7 @@ export const forgotPassword = async (req, res) => {
 
   try {
     // Check existing user
-    const checkExistingUser = await User.findOne({ where: { email } });
+    const checkExistingUser = await User.findOne({ email });
     if (!checkExistingUser) {
       return res.status(400).json({ success: false, message: "Invalid email address. User not available!" });
     }
@@ -305,17 +318,16 @@ export const forgotPassword = async (req, res) => {
       verifyEmailResetPasswordExpiryDate: expiryDate
     });
 
+    const emailResponse = await sendResetPasswordVerificationEmail(checkExistingUser.fullName, checkExistingUser.email, otp);
 
-    const emailResponse = await sendResetPasswordVerificationEmail(checkExistingUser.fullName, email, otp);
-
-    // if (!emailResponse.success) {
-    //   return res.status(200).json(
-    //     {
-    //       success: false,
-    //       message: emailResponse.message
-    //     }
-    //   );
-    // }
+    if (!emailResponse.success) {
+      return res.status(500).json(
+        {
+          success: false,
+          message: emailResponse.message
+        }
+      );
+    }
 
     return res.status(200).json({ message: "Password reset instructions have been sent to your email", user: checkExistingUser });
   }
@@ -326,14 +338,15 @@ export const forgotPassword = async (req, res) => {
 };
 
 export const verifyOTPForResetPassword = async (req, res) => {
-  const { email, otp } = req.body;
+  const { email, code } = req.body;
+  const otp = code
   // validate email and otp
   if (!email || !otp) {
     return res.status(400).json({ error: "Please, enter email and otp" });
   }
   try {
     // Check existing user
-    const checkExistingUser = await User.findOne({ email });
+    const checkExistingUser = await User.findOne({ email, isVerified: true });
     if (!checkExistingUser) {
       return res.status(400).json({ success: false, message: "Invalid email address. User not available!" });
     }
@@ -343,6 +356,11 @@ export const verifyOTPForResetPassword = async (req, res) => {
     const isCodeNotExpired = expiryDate ? expiryDate > new Date() : false;
 
     if (isCodeValid && isCodeNotExpired) {
+      await User.findByIdAndUpdate(checkExistingUser._id, {
+        verifyEmailResetPassword: null,
+        verifyEmailResetPasswordExpiryDate: null,
+      });
+
       return res.status(200).json(
         {
           success: true,
@@ -383,7 +401,7 @@ export const resetPassword = async (req, res) => {
 
   try {
     // Check existing user
-    const checkExistingUser = await User.findOne({ email });
+    const checkExistingUser = await User.findOne({ email, isVerified: true });
     if (!checkExistingUser) {
       return res.status(400).json({ success: false, message: "Invalid email address. User not available!" });
     }
@@ -394,7 +412,7 @@ export const resetPassword = async (req, res) => {
 
     await User.findByIdAndUpdate(checkExistingUser._id, {
       password: hashedPassword,
-      verifyEmailResetPassword: "",
+      verifyEmailResetPassword: null,
       verifyEmailResetPasswordExpiryDate: null
     });
 

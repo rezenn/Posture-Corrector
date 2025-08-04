@@ -1,16 +1,48 @@
 import nodemailer from "nodemailer";
-import VerificationEmail from '../emails/VerificationEmail';
+// import { render } from '@react-email/render';
+// import  VerificationEmail from '../emails/VerificationEmail.jsx';
 
 export const sendVerificationEmail = async (fullName, email, otp) => {
-  const html = await render(
-    <VerificationEmail fullName={fullName} email={email} otp={otp} />
-  );
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en" dir="ltr">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Verification Code</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+          body {
+            font-family: 'Roboto', Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          h2 {
+            color: #1a73e8;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>Hello, ${fullName}</h2>
+          <p>Thank you for signing up with us. Please use the following code to verify your email address for your registration.</p>
+          <p><strong>Verification Code: ${otp}</strong></p>
+          <p>If you did not sign up for an account, please ignore this email.</p>
+          <p>This code will expire in 10 minutes.</p>
+        </div>
+      </body>
+    </html>
+  `;
 
-  // if (!email || !html) {
-  //   return res
-  //     .status(400)
-  //     .json({ error: "Missing email or html content" });
-  // }
+  if (!email || !html) {
+    return res
+      .status(400)
+      .json({ error: "Missing email or html content" });
+  }
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",

@@ -1,6 +1,5 @@
 import { Html, Head, Font, Preview, Heading, Row, Section, Text } from '@react-email/components';
 
-
 export default function VerificationEmail({ fullName, otp }) {
     return (
         <Html lang="en" dir="ltr">

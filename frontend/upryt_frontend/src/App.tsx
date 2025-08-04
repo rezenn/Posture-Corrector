@@ -6,6 +6,7 @@ import Login from "./pages/Login.tsx"
 import ForgotPassword from "./pages/forgotpassword.tsx"
 import VerifyAccountRegistration from "./pages/VerifyAccountRegistration.tsx";
 import VerifyAccountResetPassword from './pages/VerifyAccountResetPassword.tsx';
+import ResetPassword from './pages/ResetPassword.tsx';
 
 const App = () => {
   return (
@@ -18,7 +19,7 @@ const App = () => {
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/verify-account-registration/:username" element={<VerifyAccountRegistration />} />
           <Route path="/verify-account-reset-password/:email" element={<VerifyAccountResetPassword />} />
-          <Route path="//reset-password/:email" element={<VerifyAccountResetPassword />} />
+          <Route path="/reset-password/:email" element={<ResetPassword />} />
         </Routes>
       </Router>
     </div>
