@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "generated_at": "2025-08-04T13:41:47.313423",
+    "version": "2.1",
+    "generator": "dynamic_nlg"
+  },
+  "summary": "Your Monday, August 04 Analysis:\n- Session Duration: 0h 0m 53s\n- Good Posture: 90% (0h 0m 48s)\n- Corrections Needed: 0\n- Best Streak: 0h 0m 10s\nExcellent posture maintenance throughout the day!\nMaintain your excellent habits!",
+  "visualization": "user_data/summaries/2025-08-04.png",
+  "raw_data": {
+    "total_duration": 53.39840340614319,
+    "good_percent": 90,
+    "corrections": 0,
+    "max_good_streak": 10.078124761581421,
+    "good_time": 48.125771284103394,
+    "poor_time": 5.235116720199585,
+    "common_issue": "shoulder alignment"
+  },
+  "components": {
+    "stats_hash": -1006778939973070951,
+    "insight_hash": -7550176526904960950,
+    "advice_hash": 4948905722616823056
+  }
+}
