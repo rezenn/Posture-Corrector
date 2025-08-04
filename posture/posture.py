@@ -15,6 +15,16 @@ import csv
 from datetime import datetime
 from fpdf import FPDF
 import requests
+import threading
+
+from flask import Response
+from flask import Flask, Response
+from flask_cors import CORS
+
+flask_app = Flask(__name__)
+CORS(flask_app)
+
+
 # Load AI model
 model_loaded = False
 try:
@@ -33,6 +43,59 @@ pose = mp_pose.Pose(static_image_mode=False,
                     min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
 # Nepali TTS using gTTS and pygame
+latest_posture_data = {}
+
+latest_gui_frame = None
+
+
+@flask_app.route("/video_feed")
+def video_feed():
+    def generate():
+        global latest_gui_frame
+        while True:
+            if latest_gui_frame is not None:
+                _, jpeg = cv2.imencode('.jpg', latest_gui_frame)
+                frame_bytes = jpeg.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.1)  # Send every 200ms (5 fps) or adjust to 2s if needed
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@flask_app.route("/api/posture/export/pdf", methods=["GET"])
+def export_pdf():
+    now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = latest_result.get("session", {})
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, "Upryt", ln=1, align="C")
+    pdf.cell(0, 10, "Posture Session Report", ln=2, align="C")
+    pdf.ln(5)
+    pdf.set_font("Arial", size=12)
+
+    items = [
+        ("Generated", now_text),
+        ("Session Time", f"{data.get('session_time', 0)}s"),
+        ("Good Posture Time", f"{data.get('good_posture_time', 0)}s"),
+        ("Poor Posture Time", f"{data.get('poor_posture_time', 0)}s"),
+        ("Corrections", str(data.get('corrections', 0))),
+        ("Posture Changes", str(data.get('posture_changes', 0))),
+        ("Max Good Streak", f"{data.get('max_good_streak', 0)}s"),
+        ("Max Poor Streak", f"{data.get('max_poor_streak', 0)}s"),
+        ("Good Posture %", f"{data.get('good_posture_percent', 0)}%")
+    ]
+
+    for name, val in items:
+        pdf.cell(60, 10, name, border=1)
+        pdf.cell(80, 10, val, border=1, ln=1)
+
+    pdf_output = io.BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+
+    return send_file(pdf_output, mimetype='application/pdf', as_attachment=True,
+                    download_name=f'posture_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf')
 
 
 def speak_np(text):
@@ -74,12 +137,13 @@ def calculate_angle(a, b, c):
     return np.degrees(angle)
 
 
+
 class PostureApp:
     def send_data_to_backend(self, payload):
         try:
             print("Sending payload to backend...")
             response = requests.post("http://localhost:5000/api/posture", json=payload, timeout=1)
-            print("✅ Backend response:", response.status_code, response.text)
+            print("Backend response:", response.status_code, response.text)
         except Exception as e:
             print("Failed to send to backend:", e)
 
@@ -363,6 +427,10 @@ class PostureApp:
                                     cv2.FONT_HERSHEY_SIMPLEX, 1,
                                     (0, 255, 0) if posture_status == "Good Posture" else (0, 0, 255), 2)
 
+        global latest_gui_frame
+        latest_gui_frame = display_frame.copy()
+
+
         # Convert to PhotoImage
         img = Image.fromarray(cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB))
         imgtk = ImageTk.PhotoImage(image=img)
@@ -461,6 +529,7 @@ class PostureApp:
                 self.send_data_to_backend(payload)
                 self.last_backend_send = time.time()
 
+        
 
         self.root.after(100, self.update_video)
 
@@ -520,7 +589,20 @@ class PostureApp:
                          "पीडीएफ सफलतापूर्वक निर्यात भयो।")
 
 
+
+
+
+
+
+def start_flask():
+    flask_app.run(port=5001, debug=False, use_reloader=False)
+
 if __name__ == "__main__":
+    # Start Flask server thread
+    flask_thread = threading.Thread(target=start_flask, daemon=True)
+    flask_thread.start()
+
+    # Start GUI
     root = ttk.Window(title="Upryt", themename="darkly")
     app = PostureApp(root)
     root.protocol("WM_DELETE_WINDOW", app.on_close)
