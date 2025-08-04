@@ -17,9 +17,21 @@ from fpdf import FPDF
 import requests
 import threading
 
-from flask import Response
+from flask import Flask, Response, jsonify
 from flask import Flask, Response
 from flask_cors import CORS
+
+
+import matplotlib.pyplot as plt
+from adaptive_feedback import AdaptivePostureFeedback
+from nlp_features.feedback import NLPFeedbackGenerator
+from nlp_features.sentiment import PostureSentimentAnalyzer
+from nlp_features.summary import DailySummaryGenerator
+
+import warnings
+from threading import Lock
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 flask_app = Flask(__name__)
 CORS(flask_app)
@@ -97,6 +109,18 @@ def export_pdf():
     return send_file(pdf_output, mimetype='application/pdf', as_attachment=True,
                     download_name=f'posture_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf')
 
+@flask_app.route("/generate_summary", methods=["GET"])
+def generate_summary():
+    try:
+        summary_data = posture_monitor._get_summary_data()
+        summary = posture_monitor.summary_generator.generate_summary(summary_data)
+        return jsonify({"text": summary["text"]})
+    except Exception as e:
+        print("Flask summary error:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 def speak_np(text):
     def play_nepali():
@@ -151,14 +175,37 @@ class PostureApp:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("Upryt - Posture Monitor")
+        self.root.title("Upryt")
         self.root.geometry("1280x800")
+        self.running = True
+        self.nlp_lock = Lock()
+        self.nlp_initialized = False
+
+        # Initialize camera
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            raise RuntimeError("Cannot open camera")
+
+        self.adaptive_feedback = AdaptivePostureFeedback()
+
+        # Translation dictionary
+        self.issue_translations = {
+            "shoulders are not level": "काँधहरू स्तर छैनन्",
+            "neck is leaning forward": "घाँटी अगाडि झुकिएको छ",
+            "spine is bent": "मेरुदण्ड बाङ्गिएको छ",
+            "body is not symmetrical": "शरीर सममित छैन",
+            "Your shoulders are leaning left more than usual": "तपाईंको काँधहरू सामान्य भन्दा बायाँतिर धेरै झुकेको छ",
+            "Your shoulders are leaning right more than usual": "तपाईंको काँधहरू सामान्य भन्दा दायाँतिर धेरै झुकेको छ",
+            "Your neck is leaning forward more than usual": "तपाईंको घाँटी सामान्य भन्दा धेरै अगाडि झुकेको छ",
+            "Your spine is more bent than usual": "तपाईंको मेरुदण्ड सामान्य भन्दा धेरै बाङ्गिएको छ",
+            "Your posture is less symmetrical than usual": "तपाईंको बसाइ सामान्य भन्दा कम सममित छ"
+        }
 
         # Style configuration
         self.style = ttk.Style(theme='superhero')
         self.style.configure('TLabel', font=('Helvetica', 12))
         self.style.configure('Title.TLabel', font=('Helvetica', 24, 'bold'))
-        self.style.configure('Status.TLabel', font=('Helvetica', 14, 'bold'))
+        self.style.configure('Status.TLabel', font=('Helvetica', 24, 'bold'))
         self.style.configure('Good.TLabel', foreground='lightgreen')
         self.style.configure('Poor.TLabel', foreground='salmon')
         self.style.configure('Angle.TLabel', font=('Consolas', 11))
@@ -172,143 +219,377 @@ class PostureApp:
         self.left_frame.pack(side=LEFT, fill=BOTH, expand=YES)
 
         # Right panel (stats)
-        self.right_frame = ttk.Frame(self.main_frame, width=400)
-        self.right_frame.pack(side=RIGHT, fill=Y, padx=(10, 0))
+        self.right_frame = ttk.Frame(self.main_frame, width=350)
+        self.right_frame.pack(side=RIGHT, fill=Y, expand=NO, padx=(10, 0))
 
-        # Title
-        ttk.Label(self.left_frame, text="Posture Monitoring System",
-                  style='Title.TLabel').pack(pady=(0, 15))
+        # Loading screen
+        self.loading_label = ttk.Label(
+            self.left_frame, text="Initializing system...", style='Title.TLabel')
+        self.loading_label.pack(pady=200)
 
-        # Language selector
-        self.language = ttk.StringVar(value="English")
-        lang_frame = ttk.Frame(self.left_frame)
-        lang_frame.pack(fill=X, pady=5)
-        ttk.Label(lang_frame, text="Language:").pack(side=LEFT, padx=5)
-        ttk.OptionMenu(lang_frame, self.language, "English",
-                       "English", "Nepali").pack(side=LEFT)
+        # Initialize UI after a short delay to prevent freezing
+        self.root.after(100, self._initialize_ui)
 
-        # Status display
-        self.status_frame = ttk.Labelframe(self.left_frame,
-                                           text="Posture Status",
-                                           padding=10)
-        self.status_frame.pack(fill=X, pady=10)
+    def _initialize_ui(self):
+            """Initialize the UI components after the main window is ready"""
+            try:
+                # Remove loading screen
+                self.loading_label.destroy()
 
-        self.status_var = ttk.StringVar(value="Initializing...")
-        self.angle_var = ttk.StringVar(value="Angle data will appear here")
+                # Title
+                ttk.Label(self.left_frame, text="Upryt - Posture Monitoring System",
+                        style='Title.TLabel').pack(pady=(0, 15))
 
-        ttk.Label(self.status_frame, text="Current Status:").grid(
-            row=0, column=0, sticky=W, padx=(0, 5))
-        self.status_label = ttk.Label(
-            self.status_frame,
-            textvariable=self.status_var,
-            style='Status.TLabel'
-        )
-        self.status_label.grid(row=0, column=1, sticky=W)
+                # Language selector
+                self.language = ttk.StringVar(value="English")
+                lang_frame = ttk.Frame(self.left_frame)
+                lang_frame.pack(fill=X, pady=5)
+                ttk.Label(lang_frame, text="Language:").pack(side=LEFT, padx=5)
+                ttk.OptionMenu(lang_frame, self.language, "English",
+                            "English", "Nepali").pack(side=LEFT)
 
-        ttk.Label(self.status_frame,
-                  text="Body Angles (Shoulder, Neck, Spine, Symmetry) + Distance:").grid(
-            row=1, column=0, columnspan=2, sticky=W, pady=(10, 2))
+                # Status display
+                self.status_frame = ttk.Labelframe(self.left_frame,
+                                                text="Posture Status",
+                                                padding=10)
+                self.status_frame.pack(fill=X, pady=10)
 
-        self.angle_display = ttk.Label(
-            self.status_frame,
-            textvariable=self.angle_var,
-            style='Angle.TLabel',
-            relief=SOLID,
-            padding=5,
-            width=60
-        )
-        self.angle_display.grid(
-            row=2, column=0, columnspan=2, sticky=EW, pady=5)
+                self.status_var = ttk.StringVar(value="Initializing...")
+                self.angle_var = ttk.StringVar(value="Angle data will appear here")
 
-        # Video feed
-        self.video_frame = ttk.Labelframe(
-            self.left_frame,
-            text="Live Camera Feed",
-            padding=10
-        )
-        self.video_frame.pack(fill=BOTH, expand=YES)
-        self.video_label = ttk.Label(self.video_frame)
-        self.video_label.pack(expand=YES)
+                ttk.Label(self.status_frame, text="Current Status:").grid(
+                    row=0, column=0, sticky=W, padx=(0, 5))
+                self.status_label = ttk.Label(
+                    self.status_frame,
+                    textvariable=self.status_var,
+                    style='Status.TLabel',
+                    width=25,
+                    anchor="center"
+                )
+                self.status_label.grid(row=0, column=1, sticky=W)
 
-        # Right panel content
-        self.stats_frame = ttk.Labelframe(
-            self.right_frame,
-            text="Session Statistics",
-            padding=15
-        )
-        self.stats_frame.pack(fill=BOTH, expand=YES, pady=(0, 10))
+                # Feedback label for detailed issues
+                self.feedback_var = ttk.StringVar(value="")
+                self.feedback_frame = ttk.Frame(self.status_frame)
+                self.feedback_frame.grid(
+                    row=3, column=0, columnspan=2, sticky=EW, pady=(5, 0))
 
-        # Statistics variables
-        self.stats_vars = {
-            "Session Time": ttk.StringVar(value="0s"),
-            "Good Posture Time": ttk.StringVar(value="0s"),
-            "Poor Posture Time": ttk.StringVar(value="0s"),
-            "Corrections": ttk.StringVar(value="0"),
-            "Posture Changes": ttk.StringVar(value="0"),
-            "Current Streak": ttk.StringVar(value="0s (Good)"),
-            "Max Good Streak": ttk.StringVar(value="0s"),
-            "Max Poor Streak": ttk.StringVar(value="0s"),
-            "Good Posture %": ttk.StringVar(value="0%")
-        }
+                self.feedback_label = ttk.Label(
+                    self.feedback_frame,
+                    textvariable=self.feedback_var,
+                    font=('arial', 20, 'italic'),
+                    foreground='yellow',
+                    padding=10,
+                    wraplength=1000,
+                    anchor="w",
+                    justify="left"
+                )
+                self.feedback_label.pack(fill=X)
 
-        # Create stats labels
-        for i, (text, var) in enumerate(self.stats_vars.items()):
-            ttk.Label(self.stats_frame, text=text + ":",
-                      width=20).grid(row=i, column=0, sticky=W, padx=5, pady=3)
-            ttk.Label(self.stats_frame, textvariable=var,
-                      style='TLabel').grid(row=i, column=1, sticky=E, padx=5, pady=3)
+                ttk.Label(self.status_frame,
+                        text="Body Angles (Shoulder, Neck, Spine, Symmetry) + Distance:").grid(
+                    row=1, column=0, columnspan=2, sticky=W, pady=(10, 2))
 
-        # Progress bar for good posture percentage
-        self.progress_frame = ttk.Frame(self.right_frame)
-        self.progress_frame.pack(fill=X, pady=(10, 0))
-        ttk.Label(self.progress_frame, text="Posture Score:").pack(anchor=W)
-        self.progress = ttk.Progressbar(
-            self.progress_frame,
-            orient=HORIZONTAL,
-            length=300,
-            mode='determinate',
-            bootstyle=(SUCCESS, STRIPED)
-        )
-        self.progress.pack(fill=X, pady=(5, 10))
+                self.angle_display = ttk.Label(
+                    self.status_frame,
+                    textvariable=self.angle_var,
+                    style='Angle.TLabel',
+                    relief=SOLID,
+                    padding=5,
+                    width=60,
+                    anchor="w",
+                    wraplength=500
+                )
+                self.angle_display.grid(
+                    row=2, column=0, columnspan=2, sticky=EW, pady=5)
 
-        # Export buttons
-        btn_frame = ttk.Frame(self.right_frame)
-        btn_frame.pack(fill=X, pady=(10, 0))
+                # Video feed
+                self.video_frame = ttk.Labelframe(
+                    self.left_frame,
+                    text="Live Camera Feed",
+                    padding=(200, 50, 50, 10)
+                )
+                self.video_frame.pack(fill=BOTH, expand=YES)
+                self.video_label = ttk.Label(self.video_frame)
+                self.video_label.pack(fill=BOTH, expand=YES)
 
-        ttk.Button(
-            btn_frame,
-            text="Export CSV",
-            command=self.export_stats,
-            bootstyle=INFO
-        ).pack(side=LEFT, fill=X, expand=YES, padx=5)
+                # Right panel content
+                self.stats_frame = ttk.Labelframe(
+                    self.right_frame,
+                    text="Session Statistics",
+                    padding=10
+                )
+                self.stats_frame.pack(fill=BOTH, expand=YES, pady=(0, 10))
 
-        ttk.Button(
-            btn_frame,
-            text="Export PDF",
-            command=self.export_pdf,
-            bootstyle=INFO
-        ).pack(side=LEFT, fill=X, expand=YES, padx=5)
+                self.segment_duration = 10
+                self.last_segment_time = None
+                self.session_segments = []  # Will hold dictionaries with detailed stats
 
-        # System variables
-        self.bad_posture_start = None
-        self.alert_cooldown = 1
-        self.last_alert_time = 0
-        self.session_active = False
-        self.start_time = None
-        self.good_posture_time = 0
-        self.bad_posture_time = 0
-        self.last_posture = None
-        self.posture_change_time = None
-        self.correction_count = 0
-        self.posture_change_count = 0
-        self.max_good_streak = 0
-        self.max_poor_streak = 0
-        self.current_streak_start = None
-        self.current_streak_type = None
+                # Statistics variables
+                self.stats_vars = {
+                    "Session Time": ttk.StringVar(value="0s"),
+                    "Good Posture Time": ttk.StringVar(value="0s"),
+                    "Poor Posture Time": ttk.StringVar(value="0s"),
+                    "Corrections": ttk.StringVar(value="0"),
+                    "Posture Changes": ttk.StringVar(value="0"),
+                    "Current Streak": ttk.StringVar(value="0s (Good)"),
+                    "Max Good Streak": ttk.StringVar(value="0s"),
+                    "Max Poor Streak": ttk.StringVar(value="0s"),
+                    "Good Posture %": ttk.StringVar(value="0%")
+                }
 
-        # Start video capture
-        self.cap = cv2.VideoCapture(0)
-        self.update_video()
+                # Create stats labels
+                for i, (text, var) in enumerate(self.stats_vars.items()):
+                    ttk.Label(self.stats_frame, text=text + ":", anchor="w",
+                            width=20).grid(row=i, column=0, sticky=W, padx=5, pady=3)
+                    ttk.Label(self.stats_frame, textvariable=var, width=10, anchor="w",
+                            style='TLabel').grid(row=i, column=1, sticky=E, padx=5, pady=3)
+
+                # Progress bar for good posture percentage
+                self.progress_frame = ttk.Frame(self.right_frame)
+                self.progress_frame.pack(fill=X, pady=(10, 0))
+                ttk.Label(self.progress_frame,
+                        text="Posture Score:").pack(anchor=W)
+                self.progress = ttk.Progressbar(
+                    self.progress_frame,
+                    orient=HORIZONTAL,
+                    length=300,
+                    mode='determinate',
+                    bootstyle=(SUCCESS, STRIPED)
+                )
+                self.progress.pack(fill=X, pady=(5, 10))
+
+                # Export buttons
+                btn_frame = ttk.Frame(self.right_frame)
+                btn_frame.pack(fill=X, pady=(10, 0))
+
+                ttk.Button(
+                    btn_frame,
+                    text="Export CSV",
+                    command=self.export_stats,
+                    bootstyle=INFO
+                ).pack(side=LEFT, fill=X, expand=YES, padx=5)
+
+                ttk.Button(
+                    btn_frame,
+                    text="Export PDF",
+                    command=self.export_pdf,
+                    bootstyle=INFO
+                ).pack(side=LEFT, fill=X, expand=YES, padx=5)
+
+                # System variables
+                self.bad_posture_start = None
+                self.alert_cooldown = 1
+                self.last_alert_time = 0
+                self.session_active = False
+                self.start_time = None
+                self.good_posture_time = 0
+                self.bad_posture_time = 0
+                self.last_posture = None
+                self.posture_change_time = None
+                self.correction_count = 0
+                self.posture_change_count = 0
+                self.max_good_streak = 0
+                self.max_poor_streak = 0
+                self.segment_good_time = 0
+                self.segment_poor_time = 0
+                self.current_streak_start = None
+                self.current_streak_type = None
+
+                # Add NLP UI elements
+                self._add_nlp_ui()
+
+                # Start NLP initialization in background
+                self.root.after(500, lambda: threading.Thread(target=self._initialize_nlp, daemon=True).start())
+
+                # Start video capture
+                self.update_video()
+            except Exception as e:
+                print(f"UI initialization error: {e}")
+                self.status_var.set(f"Error: {str(e)}")
+    def _initialize_nlp(self):
+        """Initialize NLP components without blocking the UI"""
+        try:
+            print("Initializing NLP modules...")
+            self.nlp_initialized = False
+
+            try:
+                self.feedback_gen = NLPFeedbackGenerator()
+                print("✓ Feedback Generator Loaded")
+            except Exception as e:
+                print("❌ Feedback Generator failed:", e)
+                raise
+
+            try:
+                self.sentiment_analyzer = PostureSentimentAnalyzer()
+                print("✓ Sentiment Analyzer Loaded")
+            except Exception as e:
+                print("❌ Sentiment Analyzer failed:", e)
+                raise
+
+            try:
+                self.summary_generator = DailySummaryGenerator()
+                print("✓ Summary Generator Loaded")
+            except Exception as e:
+                print("❌ Summary Generator failed:", e)
+                raise
+
+            # Dummy test
+            test_feedback = self.feedback_gen.generate_feedback(
+                {'shoulder': 80, 'neck': 25, 'spine': 140},
+                {'shoulder_angle': {'mean': 90, 'std': 5},
+                'neck_angle': {'mean': 30, 'std': 5},
+                'spine_angle': {'mean': 145, 'std': 5}}
+            )
+            print("Test feedback:", test_feedback)
+
+            self.nlp_initialized = True
+            self.root.after(0, self._enable_nlp_features)
+
+        except Exception as e:
+            print("NLP initialization failed:", e)
+            self.root.after(0, self._disable_nlp_features)
+
+    def _enable_nlp_features(self):
+        print("Enabling NLP UI elements")
+        try:
+            self.submit_btn.config(state='normal')
+            self.summary_btn.config(state='normal')
+            self.feedback_response.config(text="System ready")
+        except Exception as e:
+            print(f"Error enabling NLP features: {e}")
+
+    def _disable_nlp_features(self):
+        """Disable NLP-related UI elements"""
+        try:
+            self.submit_btn.config(state='disabled')
+            self.summary_btn.config(state='disabled')
+            self.feedback_response.config(text="NLP system unavailable")
+        except Exception as e:
+            print(f"Error disabling NLP features: {e}")
+
+    def _add_nlp_ui(self):
+            """Add UI elements for NLP features"""
+            # Feedback entry panel
+            self.feedback_panel = ttk.Labelframe(
+                self.right_frame,
+                text="Your Feedback",
+                padding=10
+            )
+            self.feedback_panel.pack(fill=X, pady=10)
+
+            self.feedback_entry = ttk.Entry(self.feedback_panel)
+            self.feedback_entry.pack(fill=X, pady=5)
+
+            self.submit_btn = ttk.Button(
+                self.feedback_panel,
+                text="Submit Feedback",
+                command=self._process_feedback,
+                state='disabled'  # Disabled until NLP is ready
+            )
+            self.submit_btn.pack(pady=5)
+
+            self.feedback_response = ttk.Label(
+                self.feedback_panel,
+                text="NLP system initializing...",
+                wraplength=300
+            )
+            self.feedback_response.pack(fill=X)
+
+            # Daily summary panel
+            self.summary_panel = ttk.Labelframe(
+                self.right_frame,
+                text="Daily Summary",
+                padding=10
+            )
+            self.summary_panel.pack(fill=BOTH, expand=YES, pady=10)
+
+            self.summary_btn = ttk.Button(
+                self.summary_panel,
+                text="Generate Today's Summary",
+                command=self._generate_summary,
+                state='disabled'  # Disabled until NLP is ready
+            )
+            self.summary_btn.pack(pady=5)
+
+            self.summary_text = ttk.Text(
+                self.summary_panel,
+                height=8,
+                wrap=WORD,
+                state='disabled'
+            )
+            self.summary_text.pack(fill=BOTH, expand=YES)
+
+            self.summary_image = ttk.Label(self.summary_panel)
+            self.summary_image.pack()
+
+
+
+    def _process_feedback(self):
+            if not self.nlp_initialized:
+                self.feedback_response.config(
+                    text="Please wait, system initializing...")
+                return
+
+            feedback = self.feedback_entry.get().strip()
+            if not feedback:
+                self.feedback_response.config(text="Please enter feedback")
+                return
+
+            try:
+                with self.nlp_lock:
+                    print(f"Processing feedback: {feedback}")
+                    result = self.sentiment_analyzer.analyze_response(feedback)
+                    print(f"Sentiment result: {result}")
+                    self.feedback_response.config(text=result['response'])
+            except Exception as e:
+                print(f"Feedback error: {e}")
+                self.feedback_response.config(text="Error processing feedback")
+            finally:
+                self.feedback_entry.delete(0, 'end')
+
+
+    def _generate_summary(self):
+            if not self.nlp_initialized:
+                self.summary_text.config(state='normal')
+                self.summary_text.delete(1.0, 'end')
+                self.summary_text.insert(
+                    'end', "Please wait, system initializing...")
+                self.summary_text.config(state='disabled')
+                return
+
+            try:
+                with self.nlp_lock:
+                    session_data = {
+                        'total_duration': time.time() - self.start_time,
+                        'good_percent': self.progress['value'],
+                        'corrections': self.correction_count,
+                        'max_good_streak': self.max_good_streak,
+                        'good_time': self.good_posture_time,
+                        'poor_time': self.bad_posture_time,
+                        'common_issue': self._get_most_common_issue()
+                    }
+                    print(f"Generating summary with: {session_data}")
+
+                    summary = self.summary_generator.generate_summary(session_data)
+                    print(f"Generated summary: {summary}")
+
+                    self.summary_text.config(state='normal')
+                    self.summary_text.delete(1.0, 'end')
+                    self.summary_text.insert('end', summary['text'])
+                    self.summary_text.config(state='disabled')
+
+            except Exception as e:
+                print(f"Summary error: {e}")
+                self.summary_text.config(state='normal')
+                self.summary_text.delete(1.0, 'end')
+                self.summary_text.insert('end', f"Error generating summary: {e}")
+                self.summary_text.config(state='disabled')
+
+    def _get_most_common_issue(self):
+        """Determine most frequent posture issue"""
+        # Implement your logic here
+        return "shoulder alignment"
 
     def speak_alert(self, text_en, text_np):
         now = time.time()
@@ -537,6 +818,55 @@ class PostureApp:
         self.cap.release()
         self.root.destroy()
 
+
+
+    def generate_posture_charts(self):
+        times = [seg["Time"] for seg in self.session_segments]
+        good = [seg["Good Time"] for seg in self.session_segments]
+        poor = [seg["Poor Time"] for seg in self.session_segments]
+        good_percent = [seg["Good %"] for seg in self.session_segments]
+
+        # Line Chart
+        plt.figure(figsize=(10, 5))
+        plt.plot(times, good_percent, marker='o', color='seagreen',
+                    linewidth=2, label='Good Posture %')
+        plt.title("Posture Trend Over Time")
+        plt.xlabel("Time")
+        plt.ylabel("Good Posture %")
+        plt.ylim(0, 100)
+        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("posture_trend_over_time.png")
+        plt.close()
+
+        # Bar Chart
+        x = np.arange(len(times))
+        width = 0.4
+
+        plt.figure(figsize=(10, 5))
+        plt.bar(x - width/2, good, width, label='Good', color='green')
+        plt.bar(x + width/2, poor, width, label='Poor', color='red')
+        plt.xticks(x, times, rotation=45)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Time in Segment (s)')
+        plt.title('Good vs Poor Posture')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("bar_chart.png")
+        plt.close()
+
+        # Pie chart
+        total_good = sum(good)
+        total_poor = sum(poor)
+        plt.figure(figsize=(5, 5))
+        plt.pie([total_good, total_poor], labels=["Good", "Poor"],
+                autopct='%1.1f%%', colors=["lightgreen", "salmon"])
+        plt.title("Total Posture Distribution")
+        plt.tight_layout()
+        plt.savefig("pie_chart.png")
+        plt.close()
+
     def export_stats(self):
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         filename = f"posture_stats_{now}.csv"
@@ -589,12 +919,36 @@ class PostureApp:
                          "पीडीएफ सफलतापूर्वक निर्यात भयो।")
 
 
+    def on_close(self):
+            """Clean up resources before closing"""
+            self.running = False
+            if hasattr(self, 'cap') and self.cap.isOpened():
+                self.cap.release()
+            if hasattr(self, 'feedback_gen'):
+                del self.feedback_gen
+            if hasattr(self, 'sentiment_analyzer'):
+                del self.sentiment_analyzer
+            if hasattr(self, 'summary_generator'):
+                del self.summary_generator
+            self.root.destroy()
+
+    def _get_summary_data(self):
+        return {
+            'total_duration': time.time() - self.start_time,
+            'good_percent': self.progress['value'],
+            'corrections': self.correction_count,
+            'max_good_streak': self.max_good_streak,
+            'good_time': self.good_posture_time,
+            'poor_time': self.bad_posture_time,
+            'common_issue': self._get_most_common_issue()
+        }
 
 
 
 
 
 def start_flask():
+    time.sleep(1)  # Delay to avoid thread clash with GUI/NLP
     flask_app.run(port=5001, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
@@ -605,5 +959,6 @@ if __name__ == "__main__":
     # Start GUI
     root = ttk.Window(title="Upryt", themename="darkly")
     app = PostureApp(root)
+    posture_monitor = app  # ✅ Add this global reference for Flask access
     root.protocol("WM_DELETE_WINDOW", app.on_close)
     root.mainloop()

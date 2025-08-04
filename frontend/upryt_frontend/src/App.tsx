@@ -9,6 +9,7 @@ import MainLayout from './components/MainLayout.tsx'
 import {FeaturesSection} from './pages/Feature.tsx'
 import { Toaster } from 'sonner'
 import PostureChart from './pages/PostureChart.tsx'
+import PostureMonitoring from './pages/PostureMonitoring.tsx'
 
 const App = () => {
   return (
@@ -23,6 +24,7 @@ const App = () => {
             <Route path="/otpform" element={<OtpForm />} />
             <Route path="/feature" element={<FeaturesSection />} />
             <Route path="/chart" element={<PostureChart />} />
+            <Route path="/posturescan" element={<PostureMonitoring />} />
 
           </Route>
 
