@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Posture Monitoring System</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #1e2d3b;
+      color: #ffffff;
+      margin: 0;
+      padding: 0px;
+      overflow-x: hidden;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .panel {
+      background-color: #2b3e50;
+      padding: 15px;
+      border-radius: 8px;
+      flex: 1 1 500px;
+      max-width: 600px;
+      box-sizing: border-box;
+    }
+
+    .panel h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #555;
+      padding-bottom: 4px;
+    }
+
+    .status-label {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .status-label.good { color: lightgreen; }
+    .status-label.poor { color: salmon; }
+
+    .angle-box {
+      background-color: #101920;
+      border: 1px solid #444;
+      padding: 8px;
+      font-family: monospace;
+      white-space: pre-line;
+      margin-bottom: 10px;
+    }
+
+    .live-feed {
+      background-color: #101920;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    .live-feed img {
+      width: 100%;
+      max-width: 480px;
+      height: auto;
+      border-radius: 5px;
+    }
+
+    .progress-bar {
+      height: 18px;
+      background-color: #333;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .progress {
+      height: 100%;
+      background-color: #0f0;
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+    }
+
+    .stat { margin-bottom: 6px; }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .btn.export {
+      background-color: #00bcd4;
+      color: white;
+    }
+
+    .posture_score{
+      padding-top: 50px;
+    }
+    .btn.export:hover {
+      background-color: #008fa1;
+    }
+  </style>
+</head>
+<body>
+  <h2>Posture Monitoring System</h2>
+  <div class="container">
+    <div class="panel">
+      <h3>Posture Status</h3>
+      <div id="posture" class="status-label">Loading...</div>
+
+      <h3>Body Angles (Shoulder, Neck, Spine, Symmetry) + Distance:</h3>
+      <div class="angle-box">
+Shoulder: <span id="shoulder">-</span>° | Neck: <span id="neck">-</span>°  
+Spine: <span id="spine">-</span>° | Symmetry Δ: <span id="symmetry">-</span>°  
+Eye Distance: <span id="eye">-</span>px
+      </div>
+
+      <h3>Live Camera Feed</h3>
+      <div class="live-feed">
+        <img id="live-feed" src="http://localhost:5001/video_feed" />
+      </div>
+
+      
+    </div>
+
+    <div class="panel">
+      <h3>Session Statistics</h3>
+      <div class="stat">Session Time: <span id="session_time">-</span>s</div>
+      <div class="stat">Good Posture Time: <span id="good_time">-</span>s</div>
+      <div class="stat">Poor Posture Time: <span id="poor_time">-</span>s</div>
+      <div class="stat">Corrections: <span id="corrections">-</span></div>
+      <div class="stat">Posture Changes: <span id="changes">-</span></div>
+      <div class="stat">Current Streak: <span id="streak">-</span>s</div>
+      <div class="stat">Max Good Streak: <span id="max_good">-</span>s</div>
+      <div class="stat">Max Poor Streak: <span id="max_poor">-</span>s</div>
+      <div class="stat">Good Posture %: <span id="percent">-</span>%</div>
+      <div class="buttons">
+        <button class="btn export" onclick="exportCSVWithDialog()">Export CSV</button>
+        <button class="btn export" onclick="exportPDFWithDialog()">Export PDF</button>
+      </div>
+      <div class="posture_score">Posture Score:</div>
+      <div class="progress-bar">
+        <div class="progress" id="score-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    let latestPostureData = null;
+
+    function updateData() {
+      fetch("http://localhost:5000/api/posture/latest")
+        .then(res => res.json())
+        .then(json => {
+          if (json.status === "success") {
+            const d = json.data;
+            latestPostureData = d; 
+
+            const postureElem = document.getElementById("posture");
+            postureElem.textContent = d.posture;
+            postureElem.className = "status-label " + (d.posture === "Good Posture" ? "good" : "poor");
+
+            document.getElementById("shoulder").textContent = d.shoulder_angle;
+            document.getElementById("neck").textContent = d.neck_angle;
+            document.getElementById("spine").textContent = d.spine_angle;
+            document.getElementById("symmetry").textContent = d.symmetry_score;
+            document.getElementById("eye").textContent = d.eye_distance;
+            document.getElementById("score-bar").style.width = d.posture_score + "%";
+
+            const s = d.session;
+            document.getElementById("session_time").textContent = s.session_time;
+            document.getElementById("good_time").textContent = s.good_posture_time;
+            document.getElementById("poor_time").textContent = s.poor_posture_time;
+            document.getElementById("corrections").textContent = s.corrections;
+            document.getElementById("changes").textContent = s.posture_changes;
+            document.getElementById("streak").textContent = s.current_streak;
+            document.getElementById("max_good").textContent = s.max_good_streak;
+            document.getElementById("max_poor").textContent = s.max_poor_streak;
+            document.getElementById("percent").textContent = s.good_posture_percent;
+          }
+        })
+        .catch(err => console.error("Error fetching posture data:", err));
+    }
+
+    setInterval(updateData, 1000);
+
+
+
+   
+     async function exportPDFWithDialog() {
+    if (!latestPostureData) {
+      alert("No posture data available.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Upryt - Posture Session Report", 105, 20, { align: "center" });
+    doc.setFontSize(12);
+
+    let y = 35;
+    const now = new Date().toLocaleString();
+    const s = latestPostureData.session;
+
+    const rows = [
+      ["Generated", now],
+      ["Posture", latestPostureData.posture],
+      ["Shoulder Angle", latestPostureData.shoulder_angle + "°"],
+      ["Neck Angle", latestPostureData.neck_angle + "°"],
+      ["Spine Angle", latestPostureData.spine_angle + "°"],
+      ["Symmetry Δ", latestPostureData.symmetry_score + "°"],
+      ["Eye Distance", latestPostureData.eye_distance + "px"],
+      ["Posture Score", latestPostureData.posture_score + "%"],
+      ["Session Time", s.session_time + "s"],
+      ["Good Posture Time", s.good_posture_time + "s"],
+      ["Poor Posture Time", s.poor_posture_time + "s"],
+      ["Corrections", s.corrections],
+      ["Posture Changes", s.posture_changes],
+      ["Current Streak", s.current_streak + "s"],
+      ["Max Good Streak", s.max_good_streak + "s"],
+      ["Max Poor Streak", s.max_poor_streak + "s"],
+      ["Good Posture %", s.good_posture_percent + "%"]
+    ];
+
+    rows.forEach(([label, val]) => {
+      doc.text(`${label}: ${val}`, 20, y);
+      y += 8;
+    });
+
+    // Prompt file save
+    if ('showSaveFilePicker' in window) {
+      try {
+        const options = {
+          suggestedName: "posture_report.pdf",
+          types: [{
+            description: "PDF Document",
+            accept: { "application/pdf": [".pdf"] }
+          }]
+        };
+
+        const handle = await window.showSaveFilePicker(options);
+        const writable = await handle.createWritable();
+        await writable.write(doc.output("blob"));
+        await writable.close();
+        alert("PDF saved successfully.");
+      } catch (err) {
+        console.error("Save cancelled or failed:", err);
+      }
+    } else {
+      // Fallback: force browser download
+      doc.save("posture_report.pdf");
+    }
+  }
+
+    async function exportCSVWithDialog() {
+    if (!latestPostureData) {
+      alert("No posture data.");
+      return;
+    }
+
+    const s = latestPostureData.session;
+    const rows = [
+      ["Posture", latestPostureData.posture],
+      ["Shoulder Angle", latestPostureData.shoulder_angle],
+      ["Neck Angle", latestPostureData.neck_angle],
+      ["Spine Angle", latestPostureData.spine_angle],
+      ["Symmetry Δ", latestPostureData.symmetry_score],
+      ["Eye Distance", latestPostureData.eye_distance],
+      ["Posture Score", latestPostureData.posture_score],
+      ["Session Time", s.session_time],
+      ["Good Posture Time", s.good_posture_time],
+      ["Poor Posture Time", s.poor_posture_time],
+      ["Corrections", s.corrections],
+      ["Posture Changes", s.posture_changes],
+      ["Current Streak", s.current_streak],
+      ["Max Good Streak", s.max_good_streak],
+      ["Max Poor Streak", s.max_poor_streak],
+      ["Good Posture %", s.good_posture_percent]
+    ];
+
+    const csv = rows.map(row => row.join(",")).join("\n");
+
+    if ('showSaveFilePicker' in window) {
+      try {
+        const options = {
+          suggestedName: "posture_data.csv",
+          types: [{
+            description: "CSV File",
+            accept: { "text/csv": [".csv"] }
+          }]
+        };
+
+        const handle = await window.showSaveFilePicker(options);
+        const writable = await handle.createWritable();
+        await writable.write(new Blob([csv], { type: "text/csv" }));
+        await writable.close();
+        alert("CSV saved successfully.");
+      } catch (err) {
+        console.error("Save cancelled or failed:", err);
+      }
+    } else {
+      // Fallback
+      const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      const link = document.createElement("a");
+      link.href = encodedUri;
+      link.download = "posture_data.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+  </script>
+</body>
+</html>

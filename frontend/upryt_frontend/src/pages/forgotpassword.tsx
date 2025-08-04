@@ -21,6 +21,7 @@ const forgotSchema = z.object({
   email: z.string().email({ message: "Enter a valid email address" }),
 })
 
+
 export default function ForgotPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
