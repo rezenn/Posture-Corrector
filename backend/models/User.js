@@ -53,28 +53,28 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Hash password if modified
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  if (this.password) {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
-  next();
-});
+// // Hash password if modified
+// userSchema.pre('save', async function (next) {
+//   if (!this.isModified('password')) return next();
+//   if (this.password) {
+//     this.password = await bcrypt.hash(this.password, 10);
+//   }
+//   next();
+// });
 
-// Compare password
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+// // Compare password
+// userSchema.methods.comparePassword = async function (candidatePassword) {
+//   return await bcrypt.compare(candidatePassword, this.password);
+// };
 
-// JWT generator
-userSchema.methods.generateJWT = function () {
-  return jwt.sign(
-    { id: this._id, email: this.email },
-    process.env.JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-};
+// // JWT generator
+// userSchema.methods.generateJWT = function () {
+//   return jwt.sign(
+//     { id: this._id, email: this.email },
+//     process.env.JWT_SECRET,
+//     { expiresIn: '24h' }
+//   );
+// };
 
 const User = mongoose.model('users', userSchema);
 export default User;

@@ -3,7 +3,7 @@ import { authGuard } from "../middlewares/authGuard.js";
 import { createUser, loginUser, checkUsernameUnique, handleSendEmailForRegistration, findUserByUsername, verifyOTPForRegistration, forgotPassword, verifyOTPForResetPassword, resetPassword } from "../controllers/UserController.js";
 import { googleLogin } from "../controllers/authController.js";
 // import { body } from "express-validator";
-
+import upload from './../middlewares/UploadImage';
 
 const router = express.Router();
 
@@ -17,16 +17,10 @@ router.put("/forgot-password", forgotPassword);
 router.put("/verify-account-reset-password", verifyOTPForResetPassword);
 router.put("/reset-password", resetPassword);
 
+router.put("/profile-picture", upload.single("profilePictureUrl"), uploadImage);
+router.put("/update-profile-details/:id", authGuard, updateProfileDetails);
+router.delete("/delete-user", authGuard, deleteUser);
+
 router.post("/find-by-username", findUserByUsername);
-// Validation rules for user registration
-// const validationRules = [
-//     body("username").notEmpty().withMessage("Username is required"),
-//     body("email").isEmail().withMessage("Invalid email format"),
-//     body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters long")
-// ];
-
-
-
-
 
 export default router;  

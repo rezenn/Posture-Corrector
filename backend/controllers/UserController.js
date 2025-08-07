@@ -68,7 +68,7 @@ export const createUser = async (req, res) => {
         email,
         password: hashedPassword,
         contact,
-        profilePictureUrl: "",
+        profilePictureUrlUrl: "",
         verifyCode: otp,
         verifyCodeExpiryDate: expiryDate,
         isVerified: false,
@@ -217,6 +217,7 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid username/email or password" });
     }
 
+    console.log(checkExistingUser.password)
     // Compare password
     const isMatch = await bcrypt.compare(password, checkExistingUser.password);
     if (!isMatch) {
@@ -228,7 +229,7 @@ export const loginUser = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Account not verified",
-        user: { email: user.email, username: user.username },
+        user: { email: checkExistingUser.email, username: checkExistingUser.username },
       });
     }
 
@@ -466,3 +467,85 @@ export const findUserByEmail = async (email) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+
+export const uploadImage = async (req, res) => {
+  const { id } = req.body;
+  const profilePictureUrl = req.file ? req.file.path : null;
+
+  try {
+    // Check existing user
+    const user = await userModel.findOne({ where: { id } });
+    if (!user) {
+      return res.status(400).json({ error: "User Id does not match!" })
+    }
+
+    await user.update({ profilePictureUrl });
+
+    return res.status(201).json({ message: "User Profile Picture updated successfully!", profilePictureUrl });
+  }
+  catch (error) {
+    // console.log(fullName, email, phoneNumber);
+    console.log("Error registering user:", error);
+    return res.status(500).json({ error: "Internal server error!" });
+  }
+
+}
+
+
+export const updateProfileDetails = async (req, res) => {
+  const { id } = req.params;
+  const { fullName, email, phoneNumber, gender, age, weight, height_ft, height_in } = req.body;
+
+  try {
+    const user = await userModel.findOne({ where: { id } });
+    if (!user) return res.status(404).json({ error: "User not found!" });
+
+    // Validate numerical fields
+    if (isNaN(weight) || isNaN(height_ft) || isNaN(height_in)) {
+      return res.status(400).json({ error: "Invalid weight or height values." });
+    }
+
+    // Convert height to meters and calculate BMI
+    const heightMeters = (parseFloat(height_ft) * 0.3048) + (parseFloat(height_in) * 0.0254);
+    const bmi = parseFloat(weight) / (heightMeters ** 2);
+    const roundedBMI = parseFloat(bmi.toFixed(2));
+
+    // Update user with BMI
+    await user.update({
+      fullName, email, phoneNumber, gender, age,
+      weight: parseFloat(weight),
+      height_ft: parseFloat(height_ft),
+      height_in: parseFloat(height_in),
+      bmi: roundedBMI
+    });
+
+    return res.status(200).json({
+      message: "Profile updated successfully!",
+      user: user
+    });
+  } catch (error) {
+    console.error("Update error:", error);
+    return res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+
+export const deleteUser = async (req, res) => {
+  const { id } = req.user;
+
+  try {
+    const user = await userModel.findOne({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+    console.log(user);
+
+    // Delete the user record
+    await user.destroy();
+    return res.status(200).json({ message: "User Account deleted successfully!" });
+  }
+  catch (error) {
+    return res.status(500).json({ error: "Failed to retrieve user data" });
+  }
+}

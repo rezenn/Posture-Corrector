@@ -35,7 +35,6 @@ type TabType = "score" | "correction" | "percent";
 const tabs: TabType[] = ["score", "correction", "percent"];
 const timeFilters = ["Last 1 Hour", "Today", "This Week", "This Month"];
 
-
 const formatTimestamp = (iso: string, range: string) => {
   const date = new Date(iso);
 
@@ -73,9 +72,7 @@ const formatTimestamp = (iso: string, range: string) => {
   }
 };
 
-
-
-const PostureDashboard: React.FC = () => {
+const PostureChart: React.FC = () => {
   const [data, setData] = useState<Session[]>([]);
   const [filteredData, setFilteredData] = useState<Session[]>([]);
   const [selectedTab, setSelectedTab] = useState<TabType>("score");
@@ -85,15 +82,15 @@ const PostureDashboard: React.FC = () => {
     axios
       .get("http://localhost:5000/api/get-posture-details/user123")
       .then((res) => {
-       const mapped = res.data.data.map((item: any) => {
-        const timestamp = item.timestamp;
-        return {
+        const mapped = res.data.data.map((item: any) => {
+          const timestamp = item.timestamp;
+          return {
             posture_score: item.posture_score,
             timestamp,
             formatted: formatTimestamp(timestamp, selectedRange),
             corrections: item.session.corrections,
             good_posture_percent: item.session.good_posture_percent
-        };
+          };
         });
 
         setData(mapped);
@@ -101,42 +98,42 @@ const PostureDashboard: React.FC = () => {
       .catch((err) => console.error("Error fetching posture data:", err));
   }, []);
 
- useEffect(() => {
-  if (!data.length) return;
+  useEffect(() => {
+    if (!data.length) return;
 
-  const now = new Date();
+    const now = new Date();
 
-  const filtered = data.filter((entry) => {
-    const entryDate = new Date(entry.timestamp); // no manual timezone adjustment
+    const filtered = data.filter((entry) => {
+      const entryDate = new Date(entry.timestamp);
 
-    switch (selectedRange) {
-      case "Last 1 Hour":
-        return now.getTime() - entryDate.getTime() <= 60 * 60 * 1000;
+      switch (selectedRange) {
+        case "Last 1 Hour":
+          return now.getTime() - entryDate.getTime() <= 60 * 60 * 1000;
 
-      case "Today":
-        return entryDate.toLocaleDateString() === now.toLocaleDateString();
+        case "Today":
+          return entryDate.toLocaleDateString() === now.toLocaleDateString();
 
-      case "This Week": {
-        const startOfWeek = new Date(now);
-        startOfWeek.setHours(0, 0, 0, 0);
-        const day = startOfWeek.getDay();
-        startOfWeek.setDate(startOfWeek.getDate() - day);
-        return entryDate >= startOfWeek;
+        case "This Week": {
+          const startOfWeek = new Date(now);
+          startOfWeek.setHours(0, 0, 0, 0);
+          const day = startOfWeek.getDay();
+          startOfWeek.setDate(startOfWeek.getDate() - day);
+          return entryDate >= startOfWeek;
+        }
+
+        case "This Month":
+          return (
+            entryDate.getMonth() === now.getMonth() &&
+            entryDate.getFullYear() === now.getFullYear()
+          );
+
+        default:
+          return true;
       }
+    });
 
-      case "This Month":
-        return (
-          entryDate.getMonth() === now.getMonth() &&
-          entryDate.getFullYear() === now.getFullYear()
-        );
-
-      default:
-        return true;
-    }
-  });
-
-  setFilteredData(filtered);
-}, [selectedRange, data]);
+    setFilteredData(filtered);
+  }, [selectedRange, data]);
 
   const commonOptions = {
     responsive: true,
@@ -157,9 +154,8 @@ const PostureDashboard: React.FC = () => {
         }}
         data={{
           labels: filteredData.map((d) =>
-             formatTimestamp(d.timestamp, selectedRange)),
-
-        
+            formatTimestamp(d.timestamp, selectedRange)
+          ),
           datasets: [
             {
               label: "Posture Score (%)",
@@ -180,8 +176,9 @@ const PostureDashboard: React.FC = () => {
           }
         }}
         data={{
-          labels: filteredData.map((d) => formatTimestamp(d.timestamp, selectedRange)),
-
+          labels: filteredData.map((d) =>
+            formatTimestamp(d.timestamp, selectedRange)
+          ),
           datasets: [
             {
               label: "Corrections",
@@ -203,8 +200,9 @@ const PostureDashboard: React.FC = () => {
           }
         }}
         data={{
-          labels: filteredData.map((d) => formatTimestamp(d.timestamp, selectedRange)),
-
+          labels: filteredData.map((d) =>
+            formatTimestamp(d.timestamp, selectedRange)
+          ),
           datasets: [
             {
               label: "Good Posture %",
@@ -218,12 +216,12 @@ const PostureDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       <h2 className="text-center text-2xl font-bold text-cyan-500 mb-6">
         Posture Analytics Dashboard
       </h2>
 
-      {/* Time Range Filter */}
+      {/* Time Filter */}
       <div className="mb-4 flex justify-end">
         <select
           className="border px-3 py-1 rounded text-sm text-gray-700"
@@ -244,11 +242,10 @@ const PostureDashboard: React.FC = () => {
           <div
             key={tab}
             onClick={() => setSelectedTab(tab)}
-            className={`px-5 py-2 cursor-pointer transition-all duration-300 ${
-              selectedTab === tab
+            className={`px-5 py-2 cursor-pointer transition-all duration-300 ${selectedTab === tab
                 ? "border-b-4 border-cyan-500 font-semibold text-cyan-500"
                 : "text-gray-400"
-            }`}
+              }`}
           >
             {tab === "score" && "Posture Score"}
             {tab === "correction" && "Corrections"}
@@ -262,14 +259,30 @@ const PostureDashboard: React.FC = () => {
         {charts[selectedTab]}
       </div>
 
+      {/* Stats */}
       <div className="mt-4 bg-white p-4 rounded shadow text-sm text-gray-600">
-  <p>Average Posture Score: {Math.round(filteredData.reduce((a, b) => a + b.posture_score, 0) / filteredData.length || 0)}</p>
-  <p>Total Corrections: {filteredData.reduce((a, b) => a + b.corrections, 0)}</p>
-  <p>Average Good Posture %: {Math.round(filteredData.reduce((a, b) => a + b.good_posture_percent, 0) / filteredData.length || 0)}%</p>
-</div>
-
+        <p>
+          Average Posture Score:{" "}
+          {Math.round(
+            filteredData.reduce((a, b) => a + b.posture_score, 0) /
+            filteredData.length || 0
+          )}
+        </p>
+        <p>
+          Total Corrections:{" "}
+          {filteredData.reduce((a, b) => a + b.corrections, 0)}
+        </p>
+        <p>
+          Average Good Posture %:{" "}
+          {Math.round(
+            filteredData.reduce((a, b) => a + b.good_posture_percent, 0) /
+            filteredData.length || 0
+          )}
+          %
+        </p>
+      </div>
     </div>
   );
 };
 
-export default PostureDashboard;
+export default PostureChart;

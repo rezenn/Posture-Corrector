@@ -66,7 +66,7 @@ export default function Login() {
           description: response.data.message
         });
         dispatch(loginSuccess(response.data));
-        navigate("/user/dashboard");
+        navigate("/dashboard");
         return;
       }
 
@@ -104,7 +104,7 @@ export default function Login() {
         toast.success("Logged in successfully");
 
         dispatch(loginSuccess(data));
-        navigate("/user/dashboard");
+        navigate("/dashboard");
       }
       catch (error) {
         console.error("Google Login Error:", error);
@@ -141,7 +141,7 @@ export default function Login() {
             {/* Left side: Login Form */}
             <Button
               variant="ghost"
-              className="relative top-4 left-4 p-2 text-gray-600 hover:text-blue-950"
+              className="relative top-4 left-4 text-gray-600 hover:text-blue-950"
               onClick={() => navigate("/")}
               aria-label="Back to home"
             >

@@ -7,13 +7,13 @@ import ForgotPassword from "./pages/forgotpassword.tsx"
 import VerifyAccountRegistration from "./pages/VerifyAccountRegistration.tsx";
 import VerifyAccountResetPassword from './pages/VerifyAccountResetPassword.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
-import OtpForm from './pages/otpform.tsx';
-import MainLayout from './components/MainLayout.tsx';
 import { FeaturesSection } from './pages/Feature.tsx';
 import PostureChart from './pages/PostureChart.tsx';
-import About from './components/About.tsx'
-import HeroSection from './components/HeroSection.tsx'
-import PostLoginHome from './pages/postloginhome.tsx';
+import About from './components/About.tsx';
+import Dashboard from "./pages/Dashboard.tsx";
+import PostureMonitoring from "./pages/PostueMoniter.tsx";
+import MyProfile from './pages/MyProfile.tsx';
+
 
 const App = () => {
   return (
@@ -29,8 +29,10 @@ const App = () => {
           <Route path="/reset-password/:email" element={<ResetPassword />} />
           <Route path="/about" element={<About />} />
           <Route path="/features" element={<FeaturesSection />} />
-          <Route path="/herosection" element={<HeroSection />} />
-          <Route path="/chart" element={<PostureChart />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/analytics" element={<PostureChart />} />
+          <Route path="/posturescan" element={<PostureMonitoring />} />
+          <Route path="/my-profile" element={<MyProfile />} />
         </Routes>
       </Router>
     </div>

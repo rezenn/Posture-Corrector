@@ -19,4 +19,31 @@ export const forgotPassword = async (data: any) => Api.put<ApiResponse>("/user/f
 export const verifyAccountForResetPassword = async (data: any) => Api.put<ApiResponse>("/user/verify-account-reset-password", data);
 export const resetPassword = async (data: any) => Api.put<ApiResponse>("/user/reset-password", data);
 
+export const uploadUserProfilePicture = async (formData: any) => {
+    return Api.put("/user/profile-picture", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+}
+
+export const updateProfileDetails = async (data: any) => {
+    const token = localStorage.getItem("upryt-app-token");
+    if (!token) {
+        throw new Error("No authentication token found");
+    }
+    return Api.put(`/user/update-profile-details/${data.id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+};
+
+export const deleteUser = async (data: any) => {
+    const token = localStorage.getItem("upryt-app-token");
+    if (!token) {
+        throw new Error("No authentication token found");
+    }
+    return Api.delete("/user/delete-user", {
+        data,
+        headers: { Authorization: `Bearer ${token}` }
+    });
+};
+
 export default Api;
