@@ -71,11 +71,11 @@ with open(filename, "a", newline='') as f:
         if key == ord('g'):
             writer.writerow([shoulder_angle, neck_angle,
                              spine_angle, symmetry, "good"])
-            print("✅ Saved GOOD posture")
+            print("Saved GOOD posture")
         elif key == ord('p'):
             writer.writerow([shoulder_angle, neck_angle,
                              spine_angle, symmetry, "poor"])
-            print("⚠️ Saved POOR posture")
+            print("Saved POOR posture")
         elif key == ord('q'):
             break
 

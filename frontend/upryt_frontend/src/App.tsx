@@ -11,7 +11,7 @@ import { FeaturesSection } from './pages/Feature.tsx';
 import PostureChart from './pages/PostureChart.tsx';
 import About from './components/About.tsx';
 import Dashboard from "./pages/Dashboard.tsx";
-import PostureMonitoring from "./pages/PostueMoniter.tsx";
+import PostureMonitoring from "./pages/PostureMonitoring.tsx";
 import MyProfile from './pages/MyProfile.tsx';
 
 

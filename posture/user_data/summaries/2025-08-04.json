@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "generated_at": "2025-08-04T16:45:08.597706",
+    "version": "2.1",
+    "generator": "dynamic_nlg"
+  },
+  "summary": "Summary (Monday, August 04):\n📊 Metrics:\nGood Posture: 32%\nTotal Corrections: 558\nLongest Good Streak: 0h 0m 27s\nCommon Issue: shoulder alignment\nKey Observation: Your posture needs significant attention.\nRecommendation: Try posture-correcting exercises.",
+  "visualization": "user_data/summaries/2025-08-04.png",
+  "raw_data": {
+    "total_duration": 543.5484235286713,
+    "good_percent": 32,
+    "corrections": 558,
+    "max_good_streak": 27.865872144699097,
+    "good_time": 176.09999999999428,
+    "poor_time": 158.89999999999526,
+    "common_issue": "shoulder alignment"
+  },
+  "components": {
+    "stats_hash": 9107374185962571452,
+    "insight_hash": 7876346439057685282,
+    "advice_hash": -1140413219239156140
+  }
+}

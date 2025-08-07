@@ -145,32 +145,51 @@ Eye Distance: <span id="eye">-</span>px
       
     </div>
 
-    <div class="panel">
-      <h3>Session Statistics</h3>
-      <div class="stat">Session Time: <span id="session_time">-</span>s</div>
-      <div class="stat">Good Posture Time: <span id="good_time">-</span>s</div>
-      <div class="stat">Poor Posture Time: <span id="poor_time">-</span>s</div>
-      <div class="stat">Corrections: <span id="corrections">-</span></div>
-      <div class="stat">Posture Changes: <span id="changes">-</span></div>
-      <div class="stat">Current Streak: <span id="streak">-</span>s</div>
-      <div class="stat">Max Good Streak: <span id="max_good">-</span>s</div>
-      <div class="stat">Max Poor Streak: <span id="max_poor">-</span>s</div>
-      <div class="stat">Good Posture %: <span id="percent">-</span>%</div>
-      <div class="buttons">
-        <button class="btn export" onclick="exportCSVWithDialog()">Export CSV</button>
-        <button class="btn export" onclick="exportPDFWithDialog()">Export PDF</button>
-      </div>
-      <div class="posture_score">Posture Score:</div>
-      <div class="progress-bar">
-        <div class="progress" id="score-bar"></div>
-      </div>
-    </div>
+    <!-- Inside second .panel, replacing the bottom section -->
+<div class="panel">
+  <h3>Session Statistics</h3>
+  <div class="stat">Session Time: <span id="session_time">-</span>s</div>
+  <div class="stat">Good Posture Time: <span id="good_time">-</span>s</div>
+  <div class="stat">Poor Posture Time: <span id="poor_time">-</span>s</div>
+  <div class="stat">Corrections: <span id="corrections">-</span></div>
+  <div class="stat">Posture Changes: <span id="changes">-</span></div>
+  <div class="stat">Current Streak: <span id="streak">-</span>s</div>
+  <div class="stat">Max Good Streak: <span id="max_good">-</span>s</div>
+  <div class="stat">Max Poor Streak: <span id="max_poor">-</span>s</div>
+  <div class="stat">Good Posture %: <span id="percent">-</span>%</div>
+
+  <div class="buttons">
+    <button class="btn export" onclick="exportCSVWithDialog()">Export CSV</button>
+    <button class="btn export" onclick="exportPDFWithDialog()">Export PDF</button>
+  </div>
+
+  <div class="posture_score">Posture Score:</div>
+  <div class="progress-bar">
+    <div class="progress" id="score-bar"></div>
+  </div>
+
+  <!-- Feedback Section -->
+
+<h3 style="margin-top: 20px;">Daily Summary</h3>
+<div class="angle-box">
+  <button class="btn export" onclick="generateSummary()" style="margin-bottom: 10px;">Generate Today's Summary</button>
+  <textarea id="summary" readonly style="width: 100%; height: 120px; padding: 8px; border: none; background: #1e2d3b; color: #fff; resize: none;"></textarea>
+</div>
+
+
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
     let latestPostureData = null;
+
+    async function generateSummary() {
+  const res = await fetch("http://localhost:5001/generate_summary");
+  const data = await res.json();
+  console.log(data)
+  document.getElementById("summary").value = data.text;
+}
 
     function updateData() {
       fetch("http://localhost:5000/api/posture/latest")

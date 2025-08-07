@@ -29,7 +29,7 @@ import { Link } from "react-router-dom";
 const links = [
   { name: "Dashboard", icon: <HomeIcon className="w-6 h-6" /> },
   { name: "Posture Scan", icon: <ViewfinderCircleIcon className="w-6 h-6" /> },
-  { name: "Analytics", icon: <ChartBarIcon className="w-6 h-6" /> },
+  // { name: "Analytics", icon: <ChartBarIcon className="w-6 h-6" /> },
 ];
 
 const SideNavbar = () => {
@@ -43,7 +43,6 @@ const SideNavbar = () => {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const profileRef = useRef(null);
 
-  const fullName = user?.name || "User";
   const profilePictureUrl = user?.profilePictureUrl || "";
 
   const dateString = new Date().toLocaleDateString(undefined, {
@@ -104,9 +103,9 @@ const SideNavbar = () => {
           onClick={() => setIsProfileOpen((prev) => !prev)}
         >
           <Avatar className="h-8 w-8 border">
-            <AvatarImage src={profilePictureUrl || undefined} alt={fullName} />
+            <AvatarImage src={profilePictureUrl || undefined} alt={user?.fullName} />
             <AvatarFallback>
-              {(fullName || "U")
+              {(user?.fullName || "U")
                 .split(" ")
                 .map((n: any) => n[0])
                 .join("")
@@ -114,7 +113,7 @@ const SideNavbar = () => {
                 .toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          {!collapsed && <span className="text-sm font-medium text-gray-700">{fullName}</span>}
+          {!collapsed && <span className="text-sm font-medium text-gray-700">{user?.fullName}</span>}
         </div>
 
         {/* Profile dropdown */}

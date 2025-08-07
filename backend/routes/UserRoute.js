@@ -1,9 +1,9 @@
 import express from "express";
 import { authGuard } from "../middlewares/authGuard.js";
-import { createUser, loginUser, checkUsernameUnique, handleSendEmailForRegistration, findUserByUsername, verifyOTPForRegistration, forgotPassword, verifyOTPForResetPassword, resetPassword } from "../controllers/UserController.js";
+import { createUser, loginUser, checkUsernameUnique, handleSendEmailForRegistration, findUserByUsername, verifyOTPForRegistration, forgotPassword, verifyOTPForResetPassword, resetPassword, uploadImage, updateProfileDetails, deleteUser } from "../controllers/UserController.js";
 import { googleLogin } from "../controllers/authController.js";
 // import { body } from "express-validator";
-import upload from './../middlewares/UploadImage';
+import upload from './../middlewares/UploadImage.js';
 
 const router = express.Router();
 

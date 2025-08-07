@@ -32,27 +32,15 @@ export const getLatestPostureData = (req, res) => {
 };
 
 
-export const processFrame = async (req, res) => {
-  const { image } = req.body;
 
+export const getPostureByUser = async (req, res) => {
   try {
-    // Extract base64 from data URL
-    const base64Data = image.replace(/^data:image\/jpeg;base64,/, '');
-    const imgBuffer = Buffer.from(base64Data, 'base64');
-
-    const form = new FormData();
-    form.append('image', imgBuffer, {
-      filename: 'frame.jpg',
-      contentType: 'image/jpeg',
-    });
-
-    const response = await axios.post('http://localhost:5001/process', form, {
-      headers: form.getHeaders()
-    });
-
-    res.json({ status: "success", data: response.data });
+    const { userId } = req.params;
+    const records = await Posture.find({ userId }).sort({ timestamp: -1 }).limit(100); // latest 100
+    res.json({ status: 'success', data: records });
   } catch (err) {
-    console.error("Error sending image to Python:", err.message);
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 };
+
+

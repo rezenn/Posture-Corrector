@@ -85,7 +85,6 @@ export default function Login() {
       }
     }
     catch (error) {
-      console.error("Login Error:", error);
       const axiosError = error as AxiosError<ApiResponse>;
       let errorMessage = axiosError.response?.data.message;
       toast.error('Login failed', {
