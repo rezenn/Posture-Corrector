@@ -8,7 +8,7 @@ import connectDB from './db/db.js';
 import UserRoute from './routes/UserRoute.js'
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Middleware
 app.use(cors({

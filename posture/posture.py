@@ -1,3 +1,4 @@
+import io
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -17,13 +18,13 @@ from fpdf import FPDF
 import requests
 import threading
 
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, jsonify, send_file
 from flask import Flask, Response
 from flask_cors import CORS
 
 
 import matplotlib.pyplot as plt
-from adaptive_feedback import AdaptivePostureFeedback
+from posture.nlp_features.adaptive_feedback import AdaptivePostureFeedback
 from nlp_features.feedback import NLPFeedbackGenerator
 from nlp_features.sentiment import PostureSentimentAnalyzer
 from nlp_features.summary import DailySummaryGenerator
@@ -76,7 +77,8 @@ def video_feed():
 @flask_app.route("/api/posture/export/pdf", methods=["GET"])
 def export_pdf():
     now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    data = latest_result.get("session", {})
+    # Use posture_monitor to get session data
+    data = posture_monitor._get_summary_data()
 
     pdf = FPDF()
     pdf.add_page()
