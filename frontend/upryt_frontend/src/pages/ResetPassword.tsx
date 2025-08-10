@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom"
-import { resetPassword } from './../api/Api.ts';
+import { resetPassword } from '../api/Api.js';
 
 
 const ResetPassword = () => {

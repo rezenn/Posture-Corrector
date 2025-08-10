@@ -9,7 +9,8 @@ import { Toaster } from 'sonner';
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "./redux/store.ts";
-
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+console.log("VITE_GOOGLE_CLIENT_ID:", clientId);
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Toaster />
@@ -20,5 +21,5 @@ createRoot(document.getElementById('root')!).render(
         </GoogleOAuthProvider>
       </PersistGate>
     </Provider>
-  </StrictMode>,
+  </StrictMode>
 )

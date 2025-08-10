@@ -10,7 +10,7 @@ import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { useNavigate, useParams } from "react-router-dom"
 import { verifyAccountRegistrationSchema } from './../schemas/auth/verifyAccountRegistrationSchema.ts';
-import { verifyAccountForRegistration } from './../api/Api.ts';
+import { verifyAccountForRegistration } from '../api/Api.js';
 
 
 const VerifyAccountRegistration = () => {

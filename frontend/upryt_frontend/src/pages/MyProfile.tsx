@@ -32,7 +32,7 @@ import {
   AvatarFallback,
 } from "../components/ui/avatar";
 import SideNavbar from "../components/sidenavbar";
-import { updateProfileDetails, uploadUserProfilePicture, deleteUser } from './../api/Api.ts';
+import { updateProfileDetails, uploadUserProfilePicture, deleteUser } from '../api/Api.js';
 
 
 const MyProfile = () => {

@@ -11,7 +11,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "../components/ui/input-ot
 import { Button } from "../components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form";;
 import { useNavigate, useParams } from "react-router-dom"
-import { verifyAccountForResetPassword } from './../api/Api.ts';
+import { verifyAccountForResetPassword } from '../api/Api.js';
 import { Loader2 } from "lucide-react";
 
 const VerifyAccountResetPassword = () => {
