@@ -107,8 +107,6 @@ export default function Login() {
                 Don't have an account? <Link to="/register" className="text-blue-950 hover:underline">Sign up</Link>
               </p>
             </div>
-<<<<<<< HEAD
-=======
 
             <div className="flex flex-col gap-3">
               <Button  onClick={() => login()}
@@ -122,7 +120,6 @@ export default function Login() {
             <p className="text-sm text-center mt-6 text-gray-500">
               Don't have an account? <a href="/register" className="text-blue-950 hover:underline">Sign up</a>
             </p>
->>>>>>> d26226ec7c359152ba6d5dec9feb77b94f514066
           </div>
 
           {/* Right side: Info/Branding */}

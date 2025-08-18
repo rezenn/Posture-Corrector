@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Register from './pages/Register.tsx'
 import Homepage from './pages/Homepage.tsx'
 import Login from './pages/Login.tsx'
-<<<<<<< HEAD
 import ForgotPassword from './pages/forgotpassword.tsx'
 import OtpForm from './pages/otpform.tsx'
 import MainLayout from './components/MainLayout.tsx'
@@ -11,12 +10,10 @@ import { FeaturesSection } from './components/Feature.tsx'
 import { Toaster } from 'sonner'
 import About from './components/About.tsx'
 import HeroSection from './components/HeroSection.tsx'
-import PostLoginHome from './pages/postloginHome.tsx'
-=======
-import { Toaster } from 'sonner'
+import PostLoginHome from './pages/postloginhome.tsx'
 
-import ForgotPassword from './pages/forgotpassword.tsx'
->>>>>>> d26226ec7c359152ba6d5dec9feb77b94f514066
+
+
 
 const App = () => {
   return (
@@ -37,6 +34,7 @@ const App = () => {
 
           {/* Post-login page (does NOT use MainLayout) */}
           <Route path="/postloginhome" element={<PostLoginHome />} />
+          
         </Routes>
       </Router>
     </div>

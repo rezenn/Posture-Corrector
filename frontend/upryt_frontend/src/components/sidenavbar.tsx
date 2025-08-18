@@ -22,7 +22,6 @@ const links = [
 const SideNavbar = () => {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Format current date
   const dateString = new Date().toLocaleDateString(undefined, {
     weekday: "short",
     year: "numeric",
